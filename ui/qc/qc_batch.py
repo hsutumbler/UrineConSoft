@@ -86,12 +86,19 @@ class QCBatchPage(BasePage):
 
         seen = {}
         display_batches = []
+        archived_counts = {}
         for b in batches:
-            if b.get("is_archived"):
-                continue
             key = (b["batch_id"],)
-            if key not in seen:
-                seen[key] = True
+            if key in seen:
+                continue
+            seen[key] = True
+            
+            if b.get("is_archived"):
+                lvl = b["level_id"]
+                if archived_counts.get(lvl, 0) < 2:
+                    archived_counts[lvl] = archived_counts.get(lvl, 0) + 1
+                    display_batches.append(b)
+            else:
                 display_batches.append(b)
 
         self.table.setRowCount(0)
@@ -165,6 +172,7 @@ class QCBatchPage(BasePage):
             return
         dlg = QCAcceptanceDialog(self, b, self.user)
         dlg.exec()
+        self._load()
 
     def _open_target_setting(self):
         b = self._get_selected()
@@ -322,15 +330,14 @@ class QCAcceptanceDialog(QDialog):
             btn_row.addWidget(btn_close)
         else:
             btn_accept = QPushButton("允收")
-            btn_accept.setStyleSheet("background-color: #E6F7FF; color: #0056B3; border: 1px solid #91D5FF; border-radius: 4px; padding: 8px 24px; font-weight: bold;")
+            btn_accept.setObjectName("btn_primary")
             btn_accept.clicked.connect(lambda: self._save(1))
             
             btn_cancel = QPushButton("取消")
-            btn_cancel.setStyleSheet(f"background-color: #E8F5E9; color: {COLORS['success']}; border: 1px solid #A5D6A7; border-radius: 4px; padding: 8px 24px; font-weight: bold;")
             btn_cancel.clicked.connect(self.reject)
             
             btn_reject = QPushButton("拒絕")
-            btn_reject.setStyleSheet(f"background-color: {COLORS['danger_bg']}; color: {COLORS['danger']}; border: 1px solid {COLORS['danger_border']}; border-radius: 4px; padding: 8px 24px; font-weight: bold;")
+            btn_reject.setObjectName("btn_danger")
             btn_reject.clicked.connect(lambda: self._save(2))
             
             btn_row.addWidget(btn_reject)
@@ -354,6 +361,7 @@ class QCAcceptanceDialog(QDialog):
             d2 = self.d_end.date().toPyDate()
         
         stats = QCBatchService.get_qc_batch_stats(self.batch["batch_id"], d1, d2)
+        self._stats = stats
         
         # Build Qualitative Table
         grp_qual = QGroupBox("定性/半定量項目統計")
@@ -374,6 +382,7 @@ class QCAcceptanceDialog(QDialog):
             def createEditor(self, parent, option, index):
                 if index.column() in (5, 6):
                     cb = QComboBox(parent)
+                    cb.setEditable(True)
                     cb.addItems(SEMI_OPTIONS)
                     return cb
                 return super().createEditor(parent, option, index)
@@ -446,8 +455,8 @@ class QCAcceptanceDialog(QDialog):
                 ts = self._target_settings.get(rid, {})
                 s_min = ts.get("semi_target_min")
                 print(f"DEBUG {rname} s_min: {s_min}")
-            if s_min in SEMI_OPTIONS:
-                it_min.setText(s_min)
+            if s_min is not None:
+                it_min.setText(str(s_min))
             it_min.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.read_only:
                 it_min.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
@@ -462,8 +471,8 @@ class QCAcceptanceDialog(QDialog):
                 rid = r_map.get(rname)
                 ts = self._target_settings.get(rid, {})
                 s_max = ts.get("semi_target_max")
-            if s_max in SEMI_OPTIONS:
-                it_max.setText(s_max)
+            if s_max is not None:
+                it_max.setText(str(s_max))
             it_max.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.read_only:
                 it_max.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
@@ -538,11 +547,13 @@ class QCAcceptanceDialog(QDialog):
             r = t_quant.rowCount()
             t_quant.insertRow(r)
             
+            dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
+            
             # AM, ASD formatting
-            am = f"{data['am']:.4f}" if data['am'] is not None else "—"
-            asd = f"{data['asd']:.4f}" if data['asd'] is not None else "—"
-            tm = f"{data['tm']:.4f}" if data['tm'] is not None else "—"
-            tsd = f"{data['tsd']:.4f}" if data['tsd'] is not None else "—"
+            am = f"{data['am']:.{dec}f}" if data['am'] is not None else "—"
+            asd = f"{data['asd']:.{dec}f}" if data['asd'] is not None else "—"
+            tm = f"{data['tm']:.{dec}f}" if data['tm'] is not None else "—"
+            tsd = f"{data['tsd']:.{dec}f}" if data['tsd'] is not None else "—"
             
             vals = [rname, data["n"], tm, am, tsd, asd]
             for c, v in enumerate(vals):
@@ -566,7 +577,7 @@ class QCAcceptanceDialog(QDialog):
                 m_val = ts.get("tm")
                 print(f"DEBUG {rname} m_val: {m_val}")
             if m_val is not None:
-                inp_mean.setText(f"{m_val:.4f}")
+                inp_mean.setText(f"{m_val:.{dec}f}")
             inp_mean.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.read_only:
                 inp_mean.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
@@ -583,7 +594,7 @@ class QCAcceptanceDialog(QDialog):
                 ts = self._target_settings.get(rid, {})
                 sd_val = ts.get("tsd")
             if sd_val is not None:
-                inp_sd.setText(f"{sd_val:.4f}")
+                inp_sd.setText(f"{sd_val:.{dec}f}")
             inp_sd.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.read_only:
                 inp_sd.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
@@ -611,6 +622,43 @@ class QCAcceptanceDialog(QDialog):
             
         # 1. Update qc_batches acceptance_status
         QCBatchService.save_qc_batch_acceptance(self.batch["batch_id"], status)
+        
+        # 1.5 Save to qc_batch_acceptance table so Inquiry can find it
+        if hasattr(self, '_stats'):
+            from services.qc_service import MasterService
+            reagents = MasterService.get_reagents()
+            r_map_rev = {r["reagent_id"]: r["reagent_name"] for r in reagents}
+            
+            all_reagents_for_batch = set()
+            for inst in MasterService.get_instruments():
+                for iqi in MasterService.get_iqi(inst["instrument_id"]):
+                    if iqi["level_name"] == self.batch["level_name"]:
+                        all_reagents_for_batch.add(iqi["reagent_id"])
+                        
+            for rid in all_reagents_for_batch:
+                rname = r_map_rev.get(rid)
+                qual_data = self._stats.get("qual", {}).get(rname)
+                quant_data = self._stats.get("quant", {}).get(rname)
+                
+                if qual_data:
+                    s_res = f"Pass:{qual_data['passed']} Fail:{qual_data['failed']}"
+                    QCBatchService.save_acceptance(
+                        self.batch["batch_id"], rid, 2, s_res, qual_data["range"],
+                        qual_data['failed'] == 0, None, None, None, status == 1, "", self.user["user_id"]
+                    )
+                elif quant_data:
+                    QCBatchService.save_acceptance(
+                        self.batch["batch_id"], rid, 1, None, None, True, None, 
+                        quant_data["am"], quant_data["asd"], status == 1, "", self.user["user_id"]
+                    )
+                else:
+                    reagent = next((r for r in reagents if r["reagent_id"] == rid), None)
+                    if reagent:
+                        accept_type = 1 if reagent["param_type"] == 1 else 2
+                        QCBatchService.save_acceptance(
+                            self.batch["batch_id"], rid, accept_type, None, None, True, None, 
+                            None, None, status == 1, "無測量數據", self.user["user_id"]
+                        )
         
         # 2. If Accept, save TM/TSD for quantitative items
         saved = 0
@@ -670,6 +718,11 @@ class QCAcceptanceDialog(QDialog):
             msg += f"\n並寫入 {saved} 項定量項目的設定值。"
             
         QMessageBox.information(self, "完成", msg)
+        
+        # 如果是允收，自動設為使用中
+        if status == 1:
+            QCBatchService.set_active(self.batch["batch_id"], self.batch["level_id"])
+            
         self.accept()
         
     def confirm(self, title, msg, default_yes=False):
@@ -946,7 +999,7 @@ class TargetSettingDialog(QDialog):
         g = QGridLayout(w)
         g.setSpacing(12)
         
-        headers = ["項目", "設定1 (下限 / TM)", "設定2 (上限 / TSD)", "計算範圍 (±2SD)", "TEa%", "操作"]
+        headers = ["項目", "設定1 (下限 / TM)", "設定2 (上限 / TSD)", "計算範圍 (±2SD)", "TEa%"]
         for c, h in enumerate(headers):
             lbl = QLabel(h)
             lbl.setStyleSheet(f"font-weight:700; color:{COLORS['text_primary']};")
@@ -973,17 +1026,22 @@ class TargetSettingDialog(QDialog):
             g.addWidget(QLabel(disp_name), row, 0)
             
             widgets = {}
-            if r["param_type"] == 2: # Semi
+            if r["param_type"] in (2, 3): # Semi or Numeric Semi
                 c_min = QComboBox()
-                c_min.addItems(SEMI_OPTIONS)
                 c_max = QComboBox()
-                c_max.addItems(SEMI_OPTIONS)
+                if r["param_type"] == 2:
+                    c_min.addItems(SEMI_OPTIONS)
+                    c_max.addItems(SEMI_OPTIONS)
+                else:
+                    opts = [str(x/2) for x in range(9, 18)]
+                    c_min.addItems(opts)
+                    c_max.addItems(opts)
                 
                 if r["reagent_id"] in self._existing:
                     ts = self._existing[r["reagent_id"]]
                     s_min, s_max = ts.get("semi_target_min"), ts.get("semi_target_max")
-                    if s_min in SEMI_OPTIONS: c_min.setCurrentText(s_min)
-                    if s_max in SEMI_OPTIONS: c_max.setCurrentText(s_max)
+                    if s_min: c_min.setCurrentText(s_min)
+                    if s_max: c_max.setCurrentText(s_max)
                     
                 g.addWidget(c_min, row, 1)
                 g.addWidget(c_max, row, 2)
@@ -1003,11 +1061,13 @@ class TargetSettingDialog(QDialog):
                 lbl_range = QLabel("—")
                 lbl_range.setStyleSheet("color: #666; font-size: 12px;")
                 
-                def update_range(*args, tm_w=inp_tm, tsd_w=inp_tsd, lbl=lbl_range):
+                dec = 3 if r["reagent_name"] == "SG" else (1 if r["reagent_name"] in ("RBC", "WBC") else 2)
+                
+                def update_range(*args, tm_w=inp_tm, tsd_w=inp_tsd, lbl=lbl_range, dec=dec):
                     try:
                         tm = float(tm_w.text())
                         tsd = float(tsd_w.text())
-                        lbl.setText(f"{tm - 2*tsd:.4f} ~ {tm + 2*tsd:.4f}")
+                        lbl.setText(f"{tm - 2*tsd:.{dec}f} ~ {tm + 2*tsd:.{dec}f}")
                     except ValueError:
                         lbl.setText("—")
                         
@@ -1030,30 +1090,6 @@ class TargetSettingDialog(QDialog):
                 widgets["tsd"] = inp_tsd
                 widgets["tea"] = inp_tea
                 
-            # Add History Button
-            btn_history = QPushButton("🕒")
-            btn_history.setToolTip("檢視歷史紀錄")
-            btn_history.setFixedWidth(40)
-            
-            # Need to find iqi_id for this reagent to pass to history
-            iqi_id = None
-            if r["reagent_id"] in self._existing:
-                iqi_id = self._existing[r["reagent_id"]].get("iqi_id")
-            else:
-                for inst in MasterService.get_instruments():
-                    for iqi in MasterService.get_iqi(inst["instrument_id"]):
-                        if iqi["level_name"] == self.batch["level_name"] and iqi["reagent_id"] == r["reagent_id"]:
-                            iqi_id = iqi["iqi_id"]
-                            break
-                    if iqi_id: break
-            
-            if iqi_id:
-                btn_history.clicked.connect(lambda _, i_id=iqi_id, r_name=disp_name: self._show_history(i_id, r_name))
-            else:
-                btn_history.setEnabled(False)
-                
-            g.addWidget(btn_history, row, 5)
-                
             self._inputs[r["reagent_id"]] = widgets
             row += 1
             
@@ -1065,7 +1101,7 @@ class TargetSettingDialog(QDialog):
         reason_layout = QHBoxLayout()
         reason_layout.addWidget(QLabel("變更原因："))
         self.reason_combo = QComboBox()
-        self.reason_combo.addItems(["", "新批號建檔", "更換試劑批號", "重新校正", "保養後微調", "日常微調", "其他"])
+        self.reason_combo.addItems(["", "新批號試劑", "新批號品管液", "平行測試後修訂", "其他原因"])
         self.reason_input = QLineEdit()
         self.reason_input.setPlaceholderText("自訂備註 (若選擇其他則必填)")
         reason_layout.addWidget(self.reason_combo)

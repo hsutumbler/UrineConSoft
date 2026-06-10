@@ -47,6 +47,59 @@ class InquiryService:
             return cur.fetchall()
 
     @staticmethod
+    def get_qc_target_history(from_date: date, to_date: date, inst_id: int = None, lot_number: str = None) -> list[dict]:
+        with DBContext() as (_, cur):
+            query = (
+                "SELECT s.*, "
+                "u.name AS set_by_name, "
+                "i.instrument_name, "
+                "r.reagent_name, r.param_type, "
+                "b.lot_number, b.expiry_date, l.level_name "
+                "FROM qc_target_settings s "
+                "JOIN instrument_qc_items iqi ON s.iqi_id = iqi.iqi_id "
+                "JOIN instruments i ON iqi.instrument_id = i.instrument_id "
+                "JOIN reagents r ON iqi.reagent_id = r.reagent_id "
+                "JOIN qc_batches b ON s.qc_batch_id = b.batch_id "
+                "JOIN qc_levels l ON b.level_id = l.level_id "
+                "JOIN users u ON s.set_by = u.user_id "
+                "WHERE 1=1 "
+            )
+            params = []
+            
+            if inst_id:
+                query += "AND i.instrument_id = %s "
+                params.append(inst_id)
+                
+            query += "ORDER BY s.iqi_id, s.set_at DESC"
+            cur.execute(query, params)
+            rows = cur.fetchall()
+            
+            results = []
+            for i, row in enumerate(rows):
+                dt = row["set_at"].date() if hasattr(row["set_at"], 'date') else row["set_at"]
+                
+                prev_row = None
+                for j in range(i + 1, len(rows)):
+                    if rows[j]["iqi_id"] == row["iqi_id"]:
+                        prev_row = rows[j]
+                        break
+                
+                row["prev_tm"] = prev_row["tm"] if prev_row else None
+                row["prev_tsd"] = prev_row["tsd"] if prev_row else None
+                row["prev_semi_min"] = prev_row["semi_target_min"] if prev_row else None
+                row["prev_semi_max"] = prev_row["semi_target_max"] if prev_row else None
+                
+                # Check filters that must apply to the target setting
+                if from_date <= dt <= to_date:
+                    if lot_number and lot_number != "全部":
+                        if row["lot_number"] != lot_number:
+                            continue
+                    results.append(row)
+                    
+            results.sort(key=lambda x: x["set_at"], reverse=True)
+            return results
+
+    @staticmethod
     def get_qc_acceptance_summary(from_date: date, to_date: date, lot_number: str = None) -> list[dict]:
         with DBContext() as (_, cur):
             query = (

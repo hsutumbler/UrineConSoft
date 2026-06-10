@@ -1,0 +1,502 @@
+﻿2019-06-27 11:32:06 開始取得品管資料
+2019-06-27 11:32:06 品管IDC103
+2019-06-27 11:32:06 開始取得小數位數
+2019-06-27 11:32:06 小數位數3
+2019-06-27 11:32:06 開始每日_mean_資料取得
+2019-06-27 11:32:06 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:32:06 Vtr_圖表資料參數代號：127
+2019-06-27 11:32:06 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=127
+2019-06-27 11:32:06 MelinkDTCount0
+2019-06-27 11:32:06 開始取得品管資料
+2019-06-27 11:32:06 品管IDC104
+2019-06-27 11:32:06 開始取得小數位數
+2019-06-27 11:32:06 小數位數3
+2019-06-27 11:32:06 開始每日_mean_資料取得
+2019-06-27 11:32:06 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:32:06 Vtr_圖表資料參數代號：138
+2019-06-27 11:32:06 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=138
+2019-06-27 11:32:06 MelinkDTCount0
+2019-06-27 11:36:46 開始取得品管資料
+2019-06-27 11:36:46 品管IDC103
+2019-06-27 11:36:46 開始取得小數位數
+2019-06-27 11:36:46 小數位數3
+2019-06-27 11:36:46 開始每日_mean_資料取得
+2019-06-27 11:36:46 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:46 Vtr_圖表資料參數代號：127
+2019-06-27 11:36:46 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=127
+2019-06-27 11:36:46 MelinkDTCount1
+2019-06-27 11:36:46 開始取得Target參數
+2019-06-27 11:36:46 MelinkDTCount1
+2019-06-27 11:36:46 開始取得品管資料
+2019-06-27 11:36:46 品管IDC104
+2019-06-27 11:36:46 開始取得小數位數
+2019-06-27 11:36:47 小數位數3
+2019-06-27 11:36:47 開始每日_mean_資料取得
+2019-06-27 11:36:47 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:47 Vtr_圖表資料參數代號：138
+2019-06-27 11:36:47 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=138
+2019-06-27 11:36:47 MelinkDTCount1
+2019-06-27 11:36:47 開始取得Target參數
+2019-06-27 11:36:47 MelinkDTCount1
+2019-06-27 11:36:48 開始取得品管資料
+2019-06-27 11:36:48 品管IDC103
+2019-06-27 11:36:48 開始取得小數位數
+2019-06-27 11:36:48 小數位數3
+2019-06-27 11:36:48 開始每日_mean_資料取得
+2019-06-27 11:36:48 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='32' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:48 Vtr_圖表資料參數代號：128
+2019-06-27 11:36:48 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=128
+2019-06-27 11:36:48 MelinkDTCount1
+2019-06-27 11:36:48 開始取得Target參數
+2019-06-27 11:36:48 MelinkDTCount1
+2019-06-27 11:36:48 開始取得品管資料
+2019-06-27 11:36:48 品管IDC104
+2019-06-27 11:36:48 開始取得小數位數
+2019-06-27 11:36:48 小數位數3
+2019-06-27 11:36:48 開始每日_mean_資料取得
+2019-06-27 11:36:48 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='32' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:48 Vtr_圖表資料參數代號：139
+2019-06-27 11:36:48 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=139
+2019-06-27 11:36:48 MelinkDTCount1
+2019-06-27 11:36:48 開始取得Target參數
+2019-06-27 11:36:48 MelinkDTCount1
+2019-06-27 11:36:49 開始取得品管資料
+2019-06-27 11:36:49 品管IDC103
+2019-06-27 11:36:49 開始取得小數位數
+2019-06-27 11:36:49 小數位數3
+2019-06-27 11:36:49 開始每日_mean_資料取得
+2019-06-27 11:36:49 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:49 Vtr_圖表資料參數代號：129
+2019-06-27 11:36:49 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=129
+2019-06-27 11:36:49 MelinkDTCount1
+2019-06-27 11:36:49 開始取得Target參數
+2019-06-27 11:36:49 MelinkDTCount1
+2019-06-27 11:36:49 開始取得品管資料
+2019-06-27 11:36:49 品管IDC104
+2019-06-27 11:36:49 開始取得小數位數
+2019-06-27 11:36:49 小數位數3
+2019-06-27 11:36:49 開始每日_mean_資料取得
+2019-06-27 11:36:49 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:49 Vtr_圖表資料參數代號：140
+2019-06-27 11:36:49 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=140
+2019-06-27 11:36:49 MelinkDTCount1
+2019-06-27 11:36:49 開始取得Target參數
+2019-06-27 11:36:49 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC103
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='34' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：130
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=130
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC104
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='34' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：141
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=141
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC103
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='35' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：131
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=131
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC104
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='35' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：142
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=142
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC103
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='36' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：132
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=132
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得品管資料
+2019-06-27 11:36:50 品管IDC104
+2019-06-27 11:36:50 開始取得小數位數
+2019-06-27 11:36:50 小數位數3
+2019-06-27 11:36:50 開始每日_mean_資料取得
+2019-06-27 11:36:50 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='36' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:50 Vtr_圖表資料參數代號：143
+2019-06-27 11:36:50 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=143
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:50 開始取得Target參數
+2019-06-27 11:36:50 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC103
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='37' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：133
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=133
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC104
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='37' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：144
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=144
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC103
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='38' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：134
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=134
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC104
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='38' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：145
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=145
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC103
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='39' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：135
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=135
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得品管資料
+2019-06-27 11:36:51 品管IDC104
+2019-06-27 11:36:51 開始取得小數位數
+2019-06-27 11:36:51 小數位數3
+2019-06-27 11:36:51 開始每日_mean_資料取得
+2019-06-27 11:36:51 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='39' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:51 Vtr_圖表資料參數代號：146
+2019-06-27 11:36:51 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=146
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:51 開始取得Target參數
+2019-06-27 11:36:51 MelinkDTCount1
+2019-06-27 11:36:52 開始取得品管資料
+2019-06-27 11:36:52 品管IDC103
+2019-06-27 11:36:52 開始取得小數位數
+2019-06-27 11:36:52 小數位數3
+2019-06-27 11:36:52 開始每日_mean_資料取得
+2019-06-27 11:36:52 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='40' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:52 Vtr_圖表資料參數代號：136
+2019-06-27 11:36:52 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=136
+2019-06-27 11:36:52 MelinkDTCount1
+2019-06-27 11:36:52 開始取得Target參數
+2019-06-27 11:36:52 MelinkDTCount1
+2019-06-27 11:36:52 開始取得品管資料
+2019-06-27 11:36:52 品管IDC104
+2019-06-27 11:36:52 開始取得小數位數
+2019-06-27 11:36:52 小數位數3
+2019-06-27 11:36:52 開始每日_mean_資料取得
+2019-06-27 11:36:52 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='40' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:52 Vtr_圖表資料參數代號：147
+2019-06-27 11:36:52 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=147
+2019-06-27 11:36:52 MelinkDTCount1
+2019-06-27 11:36:52 開始取得Target參數
+2019-06-27 11:36:52 MelinkDTCount1
+2019-06-27 11:36:52 開始取得品管資料
+2019-06-27 11:36:52 品管IDC103
+2019-06-27 11:36:52 開始取得小數位數
+2019-06-27 11:36:52 小數位數3
+2019-06-27 11:36:52 開始每日_mean_資料取得
+2019-06-27 11:36:52 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C103' AND mtId ='41' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:53 Vtr_圖表資料參數代號：137
+2019-06-27 11:36:53 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=137
+2019-06-27 11:36:53 MelinkDTCount1
+2019-06-27 11:36:53 開始取得Target參數
+2019-06-27 11:36:53 MelinkDTCount1
+2019-06-27 11:36:53 開始取得品管資料
+2019-06-27 11:36:53 品管IDC104
+2019-06-27 11:36:53 開始取得小數位數
+2019-06-27 11:36:53 小數位數3
+2019-06-27 11:36:53 開始每日_mean_資料取得
+2019-06-27 11:36:53 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I002' AND cId ='C104' AND mtId ='41' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:36:53 Vtr_圖表資料參數代號：148
+2019-06-27 11:36:53 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=148
+2019-06-27 11:36:53 MelinkDTCount1
+2019-06-27 11:36:53 開始取得Target參數
+2019-06-27 11:36:53 MelinkDTCount1
+2019-06-27 11:37:00 開始取得品管資料
+2019-06-27 11:37:00 品管IDC203
+2019-06-27 11:37:00 開始取得小數位數
+2019-06-27 11:37:00 小數位數3
+2019-06-27 11:37:00 開始每日_mean_資料取得
+2019-06-27 11:37:00 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:00 Vtr_圖表資料參數代號：154
+2019-06-27 11:37:00 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=154
+2019-06-27 11:37:00 MelinkDTCount2
+2019-06-27 11:37:00 開始取得Target參數
+2019-06-27 11:37:00 MelinkDTCount2
+2019-06-27 11:37:00 開始取得品管資料
+2019-06-27 11:37:00 品管IDC204
+2019-06-27 11:37:00 開始取得小數位數
+2019-06-27 11:37:00 小數位數3
+2019-06-27 11:37:00 開始每日_mean_資料取得
+2019-06-27 11:37:00 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='31' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:00 Vtr_圖表資料參數代號：165
+2019-06-27 11:37:00 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=165
+2019-06-27 11:37:00 MelinkDTCount2
+2019-06-27 11:37:00 開始取得Target參數
+2019-06-27 11:37:00 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC203
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='32' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:01 Vtr_圖表資料參數代號：155
+2019-06-27 11:37:01 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=155
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得Target參數
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC204
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='32' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:01 Vtr_圖表資料參數代號：166
+2019-06-27 11:37:01 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=166
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得Target參數
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC203
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:01 Vtr_圖表資料參數代號：156
+2019-06-27 11:37:01 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=156
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得Target參數
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC204
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:01 Vtr_圖表資料參數代號：167
+2019-06-27 11:37:01 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=167
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得Target參數
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC203
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='34' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:01 Vtr_圖表資料參數代號：157
+2019-06-27 11:37:01 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=157
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得Target參數
+2019-06-27 11:37:01 MelinkDTCount2
+2019-06-27 11:37:01 開始取得品管資料
+2019-06-27 11:37:01 品管IDC204
+2019-06-27 11:37:01 開始取得小數位數
+2019-06-27 11:37:01 小數位數3
+2019-06-27 11:37:01 開始每日_mean_資料取得
+2019-06-27 11:37:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='34' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：168
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=168
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC203
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='35' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：158
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=158
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC204
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='35' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：169
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=169
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC203
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='36' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：159
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=159
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC204
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='36' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：170
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=170
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC203
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='37' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：160
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=160
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得品管資料
+2019-06-27 11:37:02 品管IDC204
+2019-06-27 11:37:02 開始取得小數位數
+2019-06-27 11:37:02 小數位數3
+2019-06-27 11:37:02 開始每日_mean_資料取得
+2019-06-27 11:37:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='37' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:02 Vtr_圖表資料參數代號：171
+2019-06-27 11:37:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=171
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:02 開始取得Target參數
+2019-06-27 11:37:02 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC203
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='38' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：161
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=161
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC204
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='38' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：172
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=172
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC203
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='39' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：162
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=162
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC204
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='39' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：173
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=173
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC203
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='40' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：163
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=163
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC204
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='40' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：174
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=174
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC203
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='41' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：164
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=164
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得品管資料
+2019-06-27 11:37:03 品管IDC204
+2019-06-27 11:37:03 開始取得小數位數
+2019-06-27 11:37:03 小數位數3
+2019-06-27 11:37:03 開始每日_mean_資料取得
+2019-06-27 11:37:03 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='41' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-06-27 00:00') AND CONVERT(datetime,'2019-06-27 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-06-27 11:37:03 Vtr_圖表資料參數代號：175
+2019-06-27 11:37:03 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=175
+2019-06-27 11:37:03 MelinkDTCount2
+2019-06-27 11:37:03 開始取得Target參數
+2019-06-27 11:37:03 MelinkDTCount2

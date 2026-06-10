@@ -1,0 +1,59 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+loginCheck
+</name>
+</assembly>
+<members>
+<member name="F:loginCheck.loginCheck._Ldap">
+	<summary>
+ 高榮登入確認
+ </summary>
+	<remarks></remarks>
+</member><member name="M:loginCheck.loginCheck.GetSHA1(System.String)">
+	<summary>
+ 回傳SHA1雜湊碼
+ </summary>
+	<param name="_Value">要計算雜湊資料的值</param>
+	<returns>雜湊碼</returns>
+	<remarks></remarks>
+</member><member name="M:loginCheck.loginCheck.CheckSysUser(System.String,System.String)">
+	<summary>
+ 檢查是不是系統帳號登入
+ True:確認是系統帳號，False不是系統帳號
+ </summary>
+	<param name="_Id">登入帳號</param>
+	<param name="_PW">登入密碼</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:loginCheck.loginCheck.CheckNormUser(System.String,System.String)">
+	<summary>
+ 檢查一般的帳號是否是院內帳號
+ True:確認是醫院帳號，False不是醫院帳號
+ </summary>
+	<param name="_Id">登入帳號</param>
+	<param name="_PW">登入密碼</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="T:loginCheck.loginCheck">
+	<summary>
+ 帳號登入檢查物件
+ </summary>
+	<remarks></remarks>
+</member><member name="P:loginCheck.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:loginCheck.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="T:loginCheck.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member>
+</members>
+</doc>

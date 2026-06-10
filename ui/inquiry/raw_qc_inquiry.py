@@ -177,8 +177,10 @@ class RawQCInquiryPage(BasePage):
                 pivot[key] = {"lot_number": r["lot_number"] or "未設定", "items": {}}
                 
             val_str = ""
-            if r["param_type"] == 1 and r["measured_value"] is not None:
-                val_str = str(r["measured_value"])
+            if r["param_type"] in (1, 3) and r["measured_value"] is not None:
+                rname = r["reagent_name"]
+                dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else (1 if r["param_type"] == 3 else 2))
+                val_str = f"{float(r['measured_value']):.{dec}f}"
             elif r["param_type"] == 2 and r["qualitative_result"]:
                 val_str = r["qualitative_result"]
                 
@@ -262,8 +264,10 @@ class RawQCInquiryPage(BasePage):
                 groups[group_key].append(row_data)
                 
             val_str = ""
-            if r["param_type"] == 1 and r["measured_value"] is not None:
-                val_str = str(r["measured_value"])
+            if r["param_type"] in (1, 3) and r["measured_value"] is not None:
+                rname = r["reagent_name"]
+                dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else (1 if r["param_type"] == 3 else 2))
+                val_str = f"{float(r['measured_value']):.{dec}f}"
             elif r["param_type"] == 2 and r["qualitative_result"]:
                 val_str = r["qualitative_result"]
                 

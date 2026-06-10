@@ -1,0 +1,344 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+melink
+</name>
+</assembly>
+<members>
+<member name="M:MEDICARE.menu.myFormSize">
+	<summary>
+ 調整表單自己本身的大小
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.myFormClose">
+	<summary>
+ 表單關閉自己時要執行的方法
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.Button2_Click(System.Object,System.EventArgs)">
+	<summary>
+ 登出按鈕
+ </summary>
+	<param name="sender"></param>
+	<param name="e"></param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.Button1_Click(System.Object,System.EventArgs)">
+	<summary>
+ 關閉安紐
+ </summary>
+	<param name="sender"></param>
+	<param name="e"></param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.ChildrenShow(System.String)">
+	<summary>
+ 顯示子功能說明
+ </summary>
+	<param name="Value"></param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.LockOFF">
+	<summary>
+ 畫面鎖定
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu.LockON">
+	<summary>
+ 畫面解鎖
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass2._LOGIN">
+	<summary>
+ 管理者登入
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass2._OverTime_open">
+	<summary>
+ 管理者登入
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass2._User_ID">
+	<summary>
+ 登入者id
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass2._MachineLink">
+	<summary>
+ 系統設定資料
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass2._type_MachineLink._DOC">
+	<summary>
+ 院區代碼
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.sharedClass2._type_MachineLink">
+	<summary>
+ 系統設定資料
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.sharedClass2">
+	<summary>
+ 系統共享物件
+ </summary>
+	<remarks></remarks>
+</member><member name="P:MEDICARE.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.app1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.app11">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.AV">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.LINK">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.melink">
+	<summary>
+  查詢類似 (圖示) 的類型 System.Drawing.Icon 當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.meLink_2">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.meLink1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.melinkButton">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.QC">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.REF">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.RS">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.RS_BTN">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.SMA">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.SSAV">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.test">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.test2">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.TS">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.TS1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine2">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine21">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine211">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine22">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.workLine23">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.主紐">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.人員">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.備註">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.報到機">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.報表">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.容器">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.按鈕1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.按鈕2">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.按鈕3">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.查詢">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.櫃台">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.櫃台2">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.訊息列">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.跑馬燈">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.項目控管">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="T:MEDICARE.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member><member name="P:MEDICARE.meLink.CreateParams">
+	<summary>
+ 複寫表單繪製函數
+ 避免畫面閃爍
+ </summary>
+</member><member name="F:MEDICARE.meLink._PublicFunction">
+	<summary>
+ 通用方法物件
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.meLink._menuForm">
+	<summary>
+ menu表單
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.meLink._menutype">
+	<summary>
+ 功能類別:1.試劑管理2.GNT報表
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.meLink._signForm">
+	<summary>
+ 登入表單
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.SysOpen">
+	<summary>
+ 開啟系統執行基本設定
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.SysClose">
+	<summary>
+ 系統關閉
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.RegEvent(System.Boolean)">
+	<summary>
+ 註冊/反註冊事件
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.systenSignOk">
+	<summary>
+ 系統登入成功
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.LoddbSetXml">
+	<summary>
+ 讀取系統庫設定資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.ChildrenShow(System.String)">
+	<summary>
+ 子表單顯示
+ </summary>
+	<param name="_Name">要顯示的子表單名稱</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.meLink.meLink_Shown(System.Object,System.EventArgs)">
+	<summary>
+ 固定畫面範圍
+ </summary>
+</member><member name="T:MEDICARE.meLink">
+	<summary>
+ 所有子系統的外殼
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu2.myFormSize">
+	<summary>
+ 調整表單自己本身的大小
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu2.myFormClose">
+	<summary>
+ 表單關閉自己時要執行的方法
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu2.LockOFF">
+	<summary>
+ 畫面鎖定
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.menu2.LockON">
+	<summary>
+ 畫面解鎖
+ </summary>
+	<remarks></remarks>
+</member>
+</members>
+</doc>

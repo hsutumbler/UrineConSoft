@@ -1,0 +1,88 @@
+﻿2023-02-01 17:16:44
+<p>
+Lot_List： SELECT DISTINCT lot FROM LotTable  WHERE mhId = 'I002' AND od = 'EDAE'  GROUP BY lot;
+</p>
+2023-02-01 17:16:44
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:16:44
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:16:44
+<p>
+Lot_List： SELECT DISTINCT lot FROM LotTable  WHERE mhId = 'I002' AND od = 'EDAE'  GROUP BY lot;
+</p>
+2023-02-01 17:16:44
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:16:44
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:16:44
+<p>
+使用者：Marcus
+</p>
+2023-02-01 17:16:44
+<p>
+使用者權限_SQL：SELECT sysCode FROM menberLimit WHERE menberId = 'Marcus' ;
+</p>
+2023-02-01 17:16:44
+<p>
+使用者權限：W
+</p>
+2023-02-01 17:16:44
+<p>
+TESTCODE = ALL
+</p>
+2023-02-01 17:16:44
+<p>
+S1.ToString = SELECT DL.dqcId,DL.mhId,DL.cId,DL.mtId,DL.iValue,DL.iDate,DL.lot,DL.ltId,DL.iFlag4,DL.iFlag5,DL.vDate, MT.mtName, MM.cName,MM.cLevel, W.menberName, L.tMean,L.tSd, Er.detail1,Er.detail2 FROM (SELECT  dqcId,mhId,cId,mtId,iValue,iDate,iUser,lot,ltId,iFlag4,iFlag5,vDate FROM DailyQC WHERE iFlag1=1 AND iFlag2=1 AND iFlag5=0 AND mhId='I002' AND lot like'CH135920%' AND iDate >= CONVERT(datetime,'2023-01-01 00:00') AND iDate<= CONVERT(datetime,'2023-02-01 23:59') ) AS DL INNER JOIN (SELECT cId,cName,cLevel FROM MhCtrMaster WHERE  mhId='I002' ) AS MM ON DL.cId =MM.cId INNER JOIN MhTest AS MT ON MT.mhId=DL.mhId AND MT.mtId=DL.mtId INNER JOIN LotTest AS L ON L.ltId=DL.ltId LEFT JOIN menber AS W ON W.menberId=DL.iUser LEFT JOIN ErrNotes AS Er ON DL.dqcId=Er.dqcId Order by iDate
+</p>
+2023-02-01 17:17:25
+<p>
+Lot_List： SELECT DISTINCT lot FROM LotTable  WHERE mhId = 'I002' AND od = 'EDAE'  GROUP BY lot;
+</p>
+2023-02-01 17:17:25
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:17:25
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:17:25
+<p>
+Lot_List： SELECT DISTINCT lot FROM LotTable  WHERE mhId = 'I002' AND od = 'EDAE'  GROUP BY lot;
+</p>
+2023-02-01 17:17:25
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:17:25
+<p>
+mtId：Select DISTINCT a.mtId,a.mtName FROM MhTest As a INNER JOIN (Select mhId,lot,mtId from LotTest WHERE lot Like '%CH135920%')  as b on a.mhId = b.mhId  AND a.mtId =b.mtId WHERE a.mhId ='I002'
+</p>
+2023-02-01 17:17:25
+<p>
+使用者：Marcus
+</p>
+2023-02-01 17:17:25
+<p>
+使用者權限_SQL：SELECT sysCode FROM menberLimit WHERE menberId = 'Marcus' ;
+</p>
+2023-02-01 17:17:25
+<p>
+使用者權限：W
+</p>
+2023-02-01 17:17:25
+<p>
+TESTCODE = ALL
+</p>
+2023-02-01 17:17:25
+<p>
+S1.ToString = SELECT DL.dqcId,DL.mhId,DL.cId,DL.mtId,DL.iValue,DL.iDate,DL.lot,DL.ltId,DL.iFlag4,DL.iFlag5,DL.vDate, MT.mtName, MM.cName,MM.cLevel, W.menberName, L.tMean,L.tSd, Er.detail1,Er.detail2 FROM (SELECT  dqcId,mhId,cId,mtId,iValue,iDate,iUser,lot,ltId,iFlag4,iFlag5,vDate FROM DailyQC WHERE iFlag1=1 AND iFlag2=1 AND iFlag5=0 AND mhId='I002' AND lot like'CH135920%' AND iDate >= CONVERT(datetime,'2023-01-01 00:00') AND iDate<= CONVERT(datetime,'2023-02-01 23:59') ) AS DL INNER JOIN (SELECT cId,cName,cLevel FROM MhCtrMaster WHERE  mhId='I002' ) AS MM ON DL.cId =MM.cId INNER JOIN MhTest AS MT ON MT.mhId=DL.mhId AND MT.mtId=DL.mtId INNER JOIN LotTest AS L ON L.ltId=DL.ltId LEFT JOIN menber AS W ON W.menberId=DL.iUser LEFT JOIN ErrNotes AS Er ON DL.dqcId=Er.dqcId Order by iDate
+</p>

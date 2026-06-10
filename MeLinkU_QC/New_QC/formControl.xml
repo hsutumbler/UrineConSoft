@@ -1,0 +1,203 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+formControl
+</name>
+</assembly>
+<members>
+<member name="M:MEDICARE.PublcFunction.Wait(System.Int32)">
+	<summary>
+ 系統等待
+ </summary>
+	<param name="_count">等待的次數，每次40毫秒</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.DatetimgSortOut(System.String)">
+	<summary>
+ 文字形日期時間格式整理
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.logWrite(System.String)">
+	<summary>
+ 寫入紀錄
+ </summary>
+</member><member name="F:MEDICARE.PublcFunction._meLinkDB">
+	<summary>
+ meLink資料庫
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.closeALL">
+	<summary>
+ 關閉所有的資料庫連線
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetMenberLimit(System.String)">
+	<summary>
+ 下載使用者的所有權限設定資料
+ </summary>
+	<param name="_MenberId">使用者帳號</param>
+</member><member name="M:MEDICARE.PublcFunction.GetMenberLimit(System.String,System.String)">
+	<summary>
+ 下載指定模組的權限設定資料
+ </summary>
+	<param name="_MenberId">使用者帳號</param>
+	<param name="_Type">模組帳號</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetGuid">
+	<summary>
+ 產生19位Guid數值
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.IndexCheck(System.String)">
+	<summary>
+ 檢查索引是否使用過
+ </summary>
+	<param name="_SQL">要檢查的語法</param>
+	<returns>True=可寫入 False=不可寫入</returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetKeyreagenBasicData">
+	<summary>
+ 取得試劑耗材基本資料索引
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetKeyreagenBasicDataVerify">
+	<summary>
+ 取得試劑基本資料驗證條件索引
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetKeyreagenPack">
+	<summary>
+ 取得試劑供應商包裝索引
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.PublcFunction.GetKeyreagenPackDetails">
+	<summary>
+ 取得供應商包裝明細索引
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.PublcFunction">
+	<summary>
+ 各種通用的方法
+ 不採用shared
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass._type_systemSetUp._machineId">
+	<summary>
+ 儀器代號。N=不限定儀器
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass._type_systemSetUp._starting">
+	<summary>
+ 登入後的起始頁面
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.sharedClass._type_systemSetUp">
+	<summary>
+ 系統設定資料
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass._systemSetUp">
+	<summary>
+ 系統設定資料
+ </summary>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.sharedClass._Even_SysClose">
+	<summary>
+ 系統關閉事件
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.sharedClass.Run_Even_SysClose">
+	<summary>
+ 執行關閉系統事件
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass.ChildrenEvenKey">
+	<summary>
+ 避免子表單事件同時執行
+ </summary>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.sharedClass._Event_ChildrenShow">
+	<summary>
+ 子表單顯示事件
+ </summary>
+	<param name="_Name">要顯示的子表單名稱</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.sharedClass.Run_Event_ChildrenShow(System.String)">
+	<summary>
+ 執行子表單顯示事件
+ </summary>
+	<param name="_Name">要顯示的子表單名稱</param>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.sharedClass._Even_ChildrenNameShow">
+	<summary>
+ 顯示子表單的功能名稱事件
+ </summary>
+	<param name="_Value">要顯示的功能名稱</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.sharedClass.Run_Even_ChildrenNameShow(System.String)">
+	<summary>
+ 執行 子表單的功能名稱事件
+ </summary>
+	<param name="_Value"></param>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass.ModMenuEvenLock">
+	<summary>
+ 避免模組功能事件同時顯示
+ </summary>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.sharedClass._Event_ModMenuShow">
+	<summary>
+ 模組功能表顯示事件
+ </summary>
+	<param name="_Show">True=顯示 False=隱藏</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.sharedClass.Run_Event_ModMenuShow(System.Boolean)">
+	<summary>
+ 執行 模組功能表顯示事件
+ </summary>
+	<param name="_Show">True=顯示 False=隱藏</param>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.sharedClass.SSEvenLock">
+	<summary>
+ 避免模組功能事件同時顯示
+ </summary>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.sharedClass._Event_SSShow">
+	<summary>
+ 模組功能表顯示事件
+ </summary>
+	<param name="_Show">True=顯示 False=隱藏</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.sharedClass.Run_Event_SSShow(System.Boolean)">
+	<summary>
+ 執行 模組功能表顯示事件
+ </summary>
+	<param name="_Show">True=顯示 False=隱藏</param>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.sharedClass">
+	<summary>
+ 各種共享的資料
+ </summary>
+	<remarks></remarks>
+</member><member name="P:MEDICARE.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="T:MEDICARE.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member>
+</members>
+</doc>

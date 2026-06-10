@@ -35,6 +35,14 @@ class AnomalyService:
             cursor.execute("DELETE FROM phrase_templates WHERE template_id = %s", (template_id,))
 
     @staticmethod
+    def update_phrase(template_id: int, phrase_text: str):
+        with DBContext() as (conn, cursor):
+            cursor.execute(
+                "UPDATE phrase_templates SET phrase_text = %s WHERE template_id = %s",
+                (phrase_text, template_id)
+            )
+
+    @staticmethod
     def get_record_by_result_id(result_id: int):
         with DBContext() as (conn, cursor):
             cursor.execute(

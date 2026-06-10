@@ -1,0 +1,25 @@
+﻿2019-07-01 15:08:51  SELECT  M.mtName ,M.mhName,R.N ,R.Pass ,R.Fail ,R.cid,R.cLevel FROM  (SELECT M1.mtName,M1.mtId,M1.mhId,M2.mhName FROM MhTest as M1 INNER JOIN MhMaster as M2 ON M1.mhId = M2.mhId WHERE mtName not in('WBC','RBC')) AS M  INNER JOIN  (      select mtId,sum(FAIL) as fail,sum(PASS) as pass ,COUNT(dqcId) AS N,cid,cLevel  FROM (SELECT A.mtId,A.dqcId,A.cid,b.cLevel  ,case when iFlag4>1  then 1 else 0 end as FAIL ,case when iFlag4<2  then 1 else 0 end as PASS FROM DailyQC as A  INNER JOIN  MhCtrMaster as B on A.cId=B.cId  WHERE A.mhId='I003'  AND iDate BETWEEN '2019/05/29 00:00:01' AND '2019/05/29 23:59:59') as G GROUP BY  mtId ,cid,cLevel ) AS R  ON M.mhId='I003' AND  M.mtId =R.mtId  ORDER BY M.mtId 
+2019-07-01 15:08:52  SELECT  M.mtName ,M.mhName,R.N ,R.Pass ,R.Fail ,R.cid,R.cLevel FROM  (SELECT M1.mtName,M1.mtId,M1.mhId,M2.mhName FROM MhTest as M1 INNER JOIN MhMaster as M2 ON M1.mhId = M2.mhId WHERE mtName not in('WBC','RBC')) AS M  INNER JOIN  (      select mtId,sum(FAIL) as fail,sum(PASS) as pass ,COUNT(dqcId) AS N,cid,cLevel  FROM (SELECT A.mtId,A.dqcId,A.cid,b.cLevel  ,case when iFlag4>1  then 1 else 0 end as FAIL ,case when iFlag4<2  then 1 else 0 end as PASS FROM DailyQC as A  INNER JOIN  MhCtrMaster as B on A.cId=B.cId  WHERE A.mhId='I003'  AND iDate BETWEEN '2019/05/29 00:00:01' AND '2019/05/29 23:59:59') as G GROUP BY  mtId ,cid,cLevel ) AS R  ON M.mhId='I003' AND  M.mtId =R.mtId  ORDER BY M.mtId 
+2019-07-01 15:13:01 開始取得品管資料
+2019-07-01 15:13:01 品管IDC203
+2019-07-01 15:13:01 開始取得小數位數
+2019-07-01 15:13:01 小數位數3
+2019-07-01 15:13:01 開始每日_mean_資料取得
+2019-07-01 15:13:01 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C203' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-05-29 00:00') AND CONVERT(datetime,'2019-05-29 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-07-01 15:13:02 Vtr_圖表資料參數代號：156
+2019-07-01 15:13:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=156
+2019-07-01 15:13:02 MelinkDTCount2
+2019-07-01 15:13:02 開始取得Target參數
+2019-07-01 15:13:02 MelinkDTCount2
+2019-07-01 15:13:02 開始取得品管資料
+2019-07-01 15:13:02 品管IDC204
+2019-07-01 15:13:02 開始取得小數位數
+2019-07-01 15:13:02 小數位數3
+2019-07-01 15:13:02 開始每日_mean_資料取得
+2019-07-01 15:13:02 Select DATEPART(year, iDate) As YY, DATEPART(month ,iDate) As MM, DATEPART(day ,iDate) As DD, AVG(iValue) As tMean FROM DailyQC WHERE mhId ='I003' AND cId ='C204' AND mtId ='33' AND iFlag1 =1 AND iFlag2 =1 AND iDate BETWEEN CONVERT(datetime,'2019-05-29 00:00') AND CONVERT(datetime,'2019-05-29 23:59') GROUP BY DATEPART(year,iDate), DATEPART(month ,iDate), DATEPART(day ,iDate)
+2019-07-01 15:13:02 Vtr_圖表資料參數代號：167
+2019-07-01 15:13:02 SELECT A.tMean,A.tSd,A.Range,B.QC_date FROM LotTest AS A INNER JOIN LotTable AS B ON A.lot = B.lot_id WHERE A.ltId=167
+2019-07-01 15:13:02 MelinkDTCount2
+2019-07-01 15:13:02 開始取得Target參數
+2019-07-01 15:13:02 MelinkDTCount2
+2019-07-01 20:17:00  SELECT  M.mtName ,M.mhName,R.N ,R.Pass ,R.Fail ,R.cid,R.cLevel FROM  (SELECT M1.mtName,M1.mtId,M1.mhId,M2.mhName FROM MhTest as M1 INNER JOIN MhMaster as M2 ON M1.mhId = M2.mhId WHERE mtName not in('WBC','RBC')) AS M  INNER JOIN  (      select mtId,sum(FAIL) as fail,sum(PASS) as pass ,COUNT(dqcId) AS N,cid,cLevel  FROM (SELECT A.mtId,A.dqcId,A.cid,b.cLevel  ,case when iFlag4>1  then 1 else 0 end as FAIL ,case when iFlag4<2  then 1 else 0 end as PASS FROM DailyQC as A  INNER JOIN  MhCtrMaster as B on A.cId=B.cId  WHERE A.mhId='I003'  AND iDate BETWEEN '2019/06/01 00:00:01' AND '2019/07/01 23:59:59') as G GROUP BY  mtId ,cid,cLevel ) AS R  ON M.mhId='I003' AND  M.mtId =R.mtId  ORDER BY M.mtId 

@@ -1,0 +1,286 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+Report
+</name>
+</assembly>
+<members>
+<member name="P:Report.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:Report.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="T:Report.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member><member name="T:Report.RsDataSet.RsCheckTableDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:Report.RsDataSet.RsCheckTableRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:Report.RsDataSet.RsCheckTableRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:Report.RsDataSet">
+	<summary>
+Represents a strongly typed in-memory cache of data.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable1DataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable2DataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable3DataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable1Row">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable2Row">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable3Row">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:Report.DataSet1.DataTable1RowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:Report.DataSet1.DataTable2RowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:Report.DataSet1.DataTable3RowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:Report.DataSet1">
+	<summary>
+Represents a strongly typed in-memory cache of data.
+</summary>
+</member><member name="T:Report.DataSetIndex.DataTable1DataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:Report.DataSetIndex.DataTable1Row">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:Report.DataSetIndex.DataTable1RowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:Report.DataSetIndex">
+	<summary>
+Represents a strongly typed in-memory cache of data.
+</summary>
+</member><member name="F:Report.Report._PrintTable">
+	<summary>
+ 專門用來儲存列印資料的表格物件
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.myFormClose">
+	<summary>
+ 表單關閉自己時要執行的方法，子表單一定要修改
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Button1_Click(System.Object,System.EventArgs)">
+	<summary>
+ 關閉表單
+ </summary>
+	<param name="sender"></param>
+	<param name="e"></param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.checkRdlc(System.String)">
+	<summary>
+ 檢查要列印的rdlc檔案是否存在:
+ True=檔案存在，直接指定路徑reportViewr
+ False=代表沒有報表檔案
+ </summary>
+	<param name="_Name"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:Report.Report.SetParameters(System.String,System.String)">
+	<summary>
+ 設定傳給報表的參數
+ </summary>
+	<param name="_Parameters">參數名稱</param>
+	<param name="_value">參數內容</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.SetDataSources(System.String,System.Data.DataTable)">
+	<summary>
+ 設定報表要使用的資料來源
+ </summary>
+	<param name="_dsName">資料來源名稱</param>
+	<param name="_table">使用的datatable</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.SetPrintTableName(System.String)">
+	<summary>
+ 設定要給報表資料的Datatable名稱。
+ 專門針對_PrintTable 物件
+ </summary>
+	<param name="_Name">新的資料表名稱</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.RefreshReport">
+	<summary>
+ 重新繪製報表，每次報表設定完後都要執行這個方法
+ </summary>
+	<remarks></remarks>
+</member><member name="T:Report.Report._Enum_ExportType">
+	<summary>
+ 輸出方式
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.rdlcIndex">
+	<summary>
+ 列印準備畫面
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.report1(System.String,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 生化報表
+ </summary>
+	<param name="_rhkey">要列印的檢驗單ID</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.report2(System.String,System.String,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 微生物報告
+ </summary>
+	<param name="_rhkey">要列印的檢驗單ID</param>
+	<param name="_Barcode">要列印的條碼</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.report3(System.String,System.String,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 微生物染色報告
+ </summary>
+	<param name="_rhkey">要列印的檢驗單ID</param>
+	<param name="_Barcode">要列印的條碼</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.RsCheck(System.Data.DataTable,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 庫存盤點單
+ </summary>
+	<param name="_table">要列印的表格資料</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Rssavestock(System.Data.DataTable,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 安全庫存單
+ </summary>
+	<param name="_table">要列印的表格資料</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Rsexpdate(System.Data.DataTable,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 效期警示單
+ </summary>
+	<param name="_table">要列印的表格資料</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Rsinstock(System.Data.DataTable,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 入庫管理單
+ </summary>
+	<param name="_table">要列印的表格資料</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Rsoutstock(System.Data.DataTable,Report.Report._Enum_ExportType,System.String,System.String)">
+	<summary>
+ 出庫管理單
+ </summary>
+	<param name="_table">要列印的表格資料</param>
+	<param name="_ExportType">報表輸出方式</param>
+	<param name="_ExportFolder">報表輸出路徑。可以填入空值</param>
+	<param name="_ExportFileName">報表輸出檔案名稱。可以填入空值</param>
+	<remarks></remarks>
+</member><member name="F:Report.Report.printDoc">
+	<summary>
+ 直接列印物件
+ </summary>
+	<remarks></remarks>
+</member><member name="F:Report.Report.m_currentPageIndex">
+	<summary>
+ 列印頁數
+ </summary>
+	<remarks></remarks>
+</member><member name="F:Report.Report.m_streams">
+	<summary>
+ 圖片資料流清單
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.ClearStreams">
+	<summary>
+ 清除圖片Streams清單
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.CreateStream(System.String,System.String,System.Text.Encoding,System.String,System.Boolean)">
+	<summary>
+ 把每一個產生的圖片資料流放清單裡
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.Export(Microsoft.Reporting.WinForms.LocalReport)">
+	<summary>
+ 報表輸出成圖片的Stream
+ </summary>
+	<param name="report">資料來源</param>
+	<remarks></remarks>
+</member><member name="M:Report.Report.CheckFolder(System.String)">
+	<summary>
+ 檢查資料夾是否存在
+ </summary>
+	<param name="_ExportFolder"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:Report.Report.CheckFileName(System.String,System.String)">
+	<summary>
+ 檢查檔案是否存在
+ </summary>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:Report.Report.ExportPDF(Microsoft.Reporting.WinForms.LocalReport,System.String,System.String)">
+	<summary>
+ 報表直接輸出成PDF
+ </summary>
+	<remarks></remarks>
+</member><member name="M:Report.Report.ExportEXECL(Microsoft.Reporting.WinForms.LocalReport,System.String,System.String)">
+	<summary>
+ 報表直接輸出成EXCEL
+ </summary>
+	<remarks></remarks>
+</member>
+</members>
+</doc>

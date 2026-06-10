@@ -1,0 +1,190 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+BaseForm
+</name>
+</assembly>
+<members>
+<member name="P:MEDICARE.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="T:MEDICARE.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member><member name="F:MEDICARE.SysParameter._lablePrint">
+	<summary>
+ 使用的標籤印表機名稱
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.SysParameter._reportPrint">
+	<summary>
+ 使用的報表印表機名稱
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.SysParameter">
+	<summary>
+ 系統參數設定
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.LisParameter">
+	<summary>
+ LIS系統參數設定
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._worker">
+	<summary>
+ 使用者資料
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._Sys">
+	<summary>
+ 系統參數資設定
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._Lis">
+	<summary>
+ Lis參數設定
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._Rs">
+	<summary>
+ 試劑庫存參數設定
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.ProjectFileExists(System.String)">
+	<summary>
+ 檢查專案的指定檔案是否存在
+ </summary>
+	<param name="_FileName">檔案名稱，輸入的名稱需要包含完整的子資料夾路徑和副檔名</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.ProjectFileDirectory(System.String)">
+	<summary>
+ 檢查專案的指定資料夾是否存在
+ </summary>
+	<param name="_DirectoryName">資料夾名稱，輸入的名稱需要包含完整的子資料夾路徑</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._TestMode">
+	<summary>
+ 回傳目前是不是測試模式。True=是測試模式,False=不是測試模式
+ </summary>
+	<remarks></remarks>
+</member><member name="P:MEDICARE.BaseForm.TestMode">
+	<summary>
+ 回傳目前是不是測試模式。True=是測試模式,False=不是測試模式
+ </summary>
+	<value></value>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.myFormSize">
+	<summary>
+ 調整表單自己本身的大小
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.myFormClose">
+	<summary>
+ 表單關閉自己時要執行的方法，子表單一定要修改
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.BaseForm._LogLockObj">
+	<summary>
+ 避免同時執行Log寫入
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.logWrite(System.String)">
+	<summary>
+ 寫入系統執行Log紀錄
+ </summary>
+	<param name="_Value">要記錄的資訊</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.BaseForm.GetMenberLimit(System.String)">
+	<summary>
+ 下載使用者的所有權限設定資料
+ </summary>
+	<param name="_MenberId">使用者帳號</param>
+</member><member name="M:MEDICARE.BaseForm.GetMenberLimit(System.String,System.String)">
+	<summary>
+ 下載指定模組的權限設定資料
+ </summary>
+	<param name="_MenberId">使用者帳號</param>
+	<param name="_Type">模組帳號</param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.BaseForm">
+	<summary>
+ melink系統的基礎表單
+ 所有的表單必須要繼承這個表單
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.RsParameter">
+	<summary>
+ 試劑庫存參數設定
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.UserClass._ID">
+	<summary>
+ 使用者帳號
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.UserClass._Name">
+	<summary>
+ 使用者姓名
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.UserClass._db">
+	<summary>
+ 資料庫操作物件
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.UserClass._Table">
+	<summary>
+ 暫存從userRecord.data取得的資料
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.UserClass._ClientName">
+	<summary>
+ client電腦名稱 或 IP
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.UserClass.clear">
+	<summary>
+ 清除使用者資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.UserClass.SignOut">
+	<summary>
+ 清除登入資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.UserClass.GetUserData">
+	<summary>
+ 取得使用者資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.UserClass.DelUserData">
+	<summary>
+ 操作資料庫，刪除使用者資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.UserClass.UpdateUserData(System.String,System.String)">
+	<summary>
+ 更新使用者資料，只限初次登入者使用
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.UserClass">
+	<summary>
+ 使用者管理物件
+ </summary>
+	<remarks></remarks>
+</member>
+</members>
+</doc>

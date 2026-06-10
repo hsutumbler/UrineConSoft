@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<melink>
+
+  <meacineId>I001</meacineId><!-- 儀器ID 。N=不限儀器-->
+
+  <starting>VV</starting> <!-- 起始頁面-->
+  
+  
+</melink>
+

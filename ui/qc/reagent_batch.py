@@ -78,10 +78,24 @@ class ReagentBatchPage(BasePage):
             self.lbl_active.setText("目前使用中批號：未設定")
 
         self.table.setRowCount(0)
-        for r, b in enumerate(batches):
+        archived_count = 0
+        display_batches = []
+        for b in batches:
+            if b.get("is_archived"):
+                if archived_count < 2:
+                    display_batches.append(b)
+                    archived_count += 1
+            else:
+                display_batches.append(b)
+
+        for r, b in enumerate(display_batches):
             self.table.insertRow(r)
-            is_active = b["is_active"]
-            status = "✅ 使用中" if is_active else "—"
+            if b.get("is_archived"):
+                status = "📦 已退役"
+            elif b["is_active"]:
+                status = "✅ 使用中"
+            else:
+                status = "⏳ 待允收"
             vals = [
                 b["lot_number"],
                 str(b["expiry_date"] or ""),
@@ -295,6 +309,10 @@ class AcceptanceDialog(QDialog):
         from PyQt6.QtGui import QColor, QFont
         
         class EnterDelegate(QStyledItemDelegate):
+            def __init__(self, table):
+                super().__init__(table)
+                self.table = table
+
             def setModelData(self, editor, model, index):
                 from PyQt6.QtWidgets import QLineEdit
                 if isinstance(editor, QLineEdit):
@@ -314,7 +332,29 @@ class AcceptanceDialog(QDialog):
             def eventFilter(self, editor, event):
                 if event.type() == event.Type.KeyPress and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                     self.commitData.emit(editor)
-                    self.closeEditor.emit(editor)
+                    self.closeEditor.emit(editor, QStyledItemDelegate.EndEditHint.NoHint)
+                    
+                    idx = self.table.currentIndex()
+                    row, col = idx.row(), idx.column()
+                    
+                    next_row, next_col = row, col
+                    while True:
+                        if next_col == 2:
+                            next_col = 5
+                        else:
+                            next_row += 1
+                            next_col = 2
+                            
+                        if next_row >= self.table.rowCount():
+                            break
+                            
+                        item = self.table.item(next_row, next_col)
+                        if item and (item.flags() & Qt.ItemFlag.ItemIsEditable):
+                            def edit_next(r=next_row, c=next_col):
+                                self.table.setCurrentCell(r, c)
+                                self.table.editItem(self.table.item(r, c))
+                            QTimer.singleShot(0, edit_next)
+                            break
                     return True
                 return super().eventFilter(editor, event)
         
@@ -371,6 +411,7 @@ class AcceptanceDialog(QDialog):
             btn_layout.addWidget(btn_accept)
             
             # Initial load
+            self.table.itemChanged.connect(self._on_item_changed)
             self._update_table()
             
         layout.addLayout(btn_layout)
@@ -418,29 +459,83 @@ class AcceptanceDialog(QDialog):
         self._build_table_headers()
         rows = self._snapshot_data.get("rows", [])
         
-        def calc_diff(v1, v2):
+        def calc_diff(v1, v2, rname):
             if v1 == "—" or v2 == "—" or v1 is None or v2 is None:
                 return "—"
             try:
                 diff = float(v2) - float(v1)
-                return f"{diff:.4f}"
+                dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC", "pH") else 2)
+                return f"{diff:.{dec}f}"
             except ValueError:
-                return "一致" if str(v1).strip() == str(v2).strip() else "不同"
+                s1, s2 = str(v1).strip().upper(), str(v2).strip().upper()
+                if s1 == s2: return "一致"
+                if "NEG" in (s1, s2): return "不同"
+                semi_order = ["TRACE", "1+", "2+", "3+", "4+", "5+"]
+                if s1 in semi_order and s2 in semi_order:
+                    if abs(semi_order.index(s1) - semi_order.index(s2)) <= 1:
+                        return "一致"
+                return "不同"
                 
         for r, vals in enumerate(rows):
             row_idx = r + 2
             self.table.insertRow(row_idx)
             
-            # Recalculate diff for historical data if it was saved as Target Range
             if len(vals) >= 7:
-                vals[3] = calc_diff(vals[1], vals[2])
-                vals[6] = calc_diff(vals[4], vals[5])
+                rname = vals[0]
+                vals[3] = calc_diff(vals[1], vals[2], rname)
+                vals[6] = calc_diff(vals[4], vals[5], rname)
                 
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(str(v) if v is not None else "—")
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(row_idx, c, item)
+
+    def _on_item_changed(self, item):
+        if self.read_only: return
+        col = item.column()
+        row = item.row()
+        if row < 2: return # Headers
+        
+        if col in (2, 5): # New L1 or New L2
+            rname = self.table.item(row, 0).text()
+            
+            def calc_diff(v1, v2, rname):
+                if not v1 or not v2 or v1 == "—" or v2 == "—":
+                    return "—"
+                try:
+                    diff = float(v2) - float(v1)
+                    dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC", "pH") else 2)
+                    return f"{diff:.{dec}f}"
+                except ValueError:
+                    s1, s2 = str(v1).strip().upper(), str(v2).strip().upper()
+                    if s1 == s2: return "一致"
+                    if "NEG" in (s1, s2): return "不同"
+                    semi_order = ["TRACE", "1+", "2+", "3+", "4+", "5+"]
+                    if s1 in semi_order and s2 in semi_order:
+                        if abs(semi_order.index(s1) - semi_order.index(s2)) <= 1:
+                            return "一致"
+                    return "不同"
+            
+            if col == 2:
+                active_item = self.table.item(row, 1)
+                diff_item = self.table.item(row, 3)
+            else:
+                active_item = self.table.item(row, 4)
+                diff_item = self.table.item(row, 6)
+                
+            active_val = active_item.text() if active_item else "—"
+            new_val = item.text()
+            
+            diff_str = calc_diff(active_val, new_val, rname)
+            
+            if diff_item:
+                diff_item.setText(diff_str)
+                from PyQt6.QtGui import QColor
+                if diff_str == "不同":
+                    diff_item.setForeground(QColor("#E74C3C"))
+                else:
+                    diff_item.setForeground(QColor("#000000"))
 
     def _update_table(self):
         if self.read_only:
@@ -477,25 +572,39 @@ class AcceptanceDialog(QDialog):
             a_row = active_data.get(rname, {})
             n_row = new_data.get(rname, {})
             
-            # Form values
-            a_l1 = a_row.get("Level 1", "—")
-            n_l1 = n_row.get("Level 1", "—")
+            def fmt_val(v):
+                from decimal import Decimal
+                if v == "—" or v is None: return "—"
+                if isinstance(v, (int, float, Decimal)) or (isinstance(v, str) and v.replace('.','',1).replace('-','',1).isdigit()):
+                    dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC", "pH") else 2)
+                    return f"{float(v):.{dec}f}"
+                return str(v)
+
+            a_l1 = fmt_val(a_row.get("Level 1"))
+            n_l1 = fmt_val(n_row.get("Level 1"))
             
-            a_l2 = a_row.get("Level 2", "—")
-            n_l2 = n_row.get("Level 2", "—")
+            a_l2 = fmt_val(a_row.get("Level 2"))
+            n_l2 = fmt_val(n_row.get("Level 2"))
             
-            def calc_diff(v1, v2):
+            def calc_diff(v1, v2, rname):
                 if v1 == "—" or v2 == "—" or v1 is None or v2 is None:
                     return "—"
                 try:
                     diff = float(v2) - float(v1)
-                    return f"{diff:.4f}"
+                    dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC", "pH") else 2)
+                    return f"{diff:.{dec}f}"
                 except ValueError:
-                    # Strings like "Neg", "1+"
-                    return "一致" if v1 == v2 else "不同"
+                    s1, s2 = str(v1).strip().upper(), str(v2).strip().upper()
+                    if s1 == s2: return "一致"
+                    if "NEG" in (s1, s2): return "不同"
+                    semi_order = ["TRACE", "1+", "2+", "3+", "4+", "5+"]
+                    if s1 in semi_order and s2 in semi_order:
+                        if abs(semi_order.index(s1) - semi_order.index(s2)) <= 1:
+                            return "一致"
+                    return "不同"
             
-            d_l1 = calc_diff(a_l1, n_l1)
-            d_l2 = calc_diff(a_l2, n_l2)
+            d_l1 = calc_diff(a_l1, n_l1, rname)
+            d_l2 = calc_diff(a_l2, n_l2, rname)
             
             self.table.insertRow(row_idx)
             
@@ -528,6 +637,7 @@ class AcceptanceDialog(QDialog):
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     
                 self.table.setItem(row_idx, c, item)
+            self.table.blockSignals(False)
             row_idx += 1
 
     def _save_decision(self, status: int):
@@ -553,10 +663,9 @@ class AcceptanceDialog(QDialog):
         
         QMessageBox.information(self, "完成", f"已成功儲存決策：{st}")
         
-        # 如果是允收，問要不要啟用
+        # 如果是允收，自動設為使用中
         if status == 1:
-            if self.confirm("啟用批號", "是否立即將此允收批號設為目前使用中？", default_yes=True):
-                ReagentBatchService.set_active(self.batch['batch_id'])
+            ReagentBatchService.set_active(self.batch['batch_id'])
                 
         self.accept()
 

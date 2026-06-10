@@ -1,0 +1,4 @@
+﻿2023-01-31 16:30:39
+<p>
+SQL資料匯入 = SELECT D.mhitem FROM LotTable AS A INNER JOIN LotTest AS B ON A.lot_id = B.lot INNER JOIN MhMaster AS C ON B.mhId = C.mhId INNER JOIN MhItem AS D ON B.mtId = D.mtId AND C.mhcode = D.mhcode WHERE A.LOT = 'CH16440' GROUP BY D.mhitem 
+</p>

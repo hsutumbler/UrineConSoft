@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<parameter>
+
+  <!-- 系統共用參數-->
+  <sys>
+    <lablePrint>Microsoft XPS Document Writer</lablePrint><!-- 標籤印表機-->
+    <reportPrint>Microsoft XPS Document Writer</reportPrint><!-- 報表印表機-->
+   
+  </sys>
+  <!-- TS開關-->
+  <CallTS>T</CallTS>
+  <!-- QC開關-->
+  <CallQC>T</CallQC>
+  <!-- RS開關-->
+  <CallRS>T</CallRS>
+  <!-- SMA開關-->
+  <CallSMA>T</CallSMA>
+  <!-- REF開關-->
+  <CallREF>T</CallREF>
+  <!-- link開關-->
+  <CallLINK>T</CallLINK>
+  <!-- AV開關-->
+  <CallAV>T</CallAV>
+  <!-- BMG開關-->
+  <CallBMG>T</CallBMG>
+  <!-- 櫃台管理開關-->
+  <CallStaffRecord>T</CallStaffRecord>
+  <!-- 跑馬燈開關-->
+  <CallRunLight>T</CallRunLight>
+  <!-- 報到機開關-->
+  <CallBaodao>T</CallBaodao>
+  <!-- 員工管理開關-->
+  <CallAddUser>T</CallAddUser>
+  <!-- 病例備註開關-->
+  <CallBlackList>T</CallBlackList>
+  <!-- 病例查詢開關-->
+  <Callinquiry>T</Callinquiry>
+  <!-- 項目管理開關-->
+  <CallList>T</CallList>
+  <!-- 容器管理開關-->
+  <Calltube>T</Calltube>
+  <!-- 報表程式開關-->
+  <CallGNTRE>T</CallGNTRE>
+  <!-- PortNo-->
+  <PortNo>3</PortNo>
+  <!-- BaudRate-->
+  <BaudRate>9600</BaudRate>
+  <!-- DataBits-->
+  <DataBits>7</DataBits>
+  <!-- Parity-->
+  <Parity>2</Parity>
+  <!-- StopBits-->
+  <StopBits>1</StopBits>
+  <!-- machineName-->
+  <machineName>I001</machineName>
+  <!-- TwoWay-->
+  <TwoWay>ON</TwoWay>
+  <!-- 主程式開關-->
+  <DOC>C</DOC>
+  <!-- 院區：義大總院A,義大癌醫C,義大大昌D-->
+  <sys2>
+    
+  </sys2>
+  <!-- 管理程式開關-->
+  <monitorset>
+   
+  </monitorset>
+
+  <!-- 儀器連線設定-->
+  <MachineLink>
+    
+  </MachineLink>
+  <!-- 發報告系統專用參數-->
+  <lis>
+   
+  </lis>
+
+  <!-- 試劑庫存專用參數-->
+  <rs>
+    
+  </rs>
+  
+</parameter>

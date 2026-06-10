@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!-- 資料庫連線設定參數-->
+<DataBas>
+
+  <!-- 
+  可設定多組資料庫，每組資料庫用標籤<SQL></SQL>包裝。
+  不同的<SQL></SQL>標籤，可以用Name參數來做區分，參數的格式沒有限制。
+    -->
+  
+  <!-- DBMS 標籤說明(大小寫相同)
+  設定是要使用何種資料庫，目前支援資料庫如下:
+  資料庫種類:{使用到的標籤}
+  DSN:{Path、UserID、UserPW}
+  LocalDB:{_IP、Path}
+  SqlLite:{Path}
+  Oracle:{IP(TSN)、UserID、UserPW}
+  MSSQL:{IP、DBName、UserID、UserPW}
+  Access:{Path、UserPW}
+  MySQL:{IP、DBName、Port、UserID、UserPW}
+  Informix:{IP、DBName、UserID、UserPW、Port(SERV)、Path(SRVR)}
+  -->
+  
+  <!-- Driver 標籤說明(大小寫不同)
+  設定使用的 ODBC DRiver，目前支援的 ODBC Driver清單如下:
+  DSN=只有DSN沒有Driver
+  
+  SqlLite:
+  {
+   SQLite3 ODBC Driver
+  }
+  
+  Oracle:
+  {
+   Oracle in OraHome92
+   Oracle in XEClient
+   Oracle in OraClient11g_home1
+  }
+  
+  MSSQL、LocalDB、Access:
+  {
+   Microsoft Access Driver (*.mdb)
+   Microsoft Access Driver (*.mdb, *.accdb)
+   
+   SQL Server
+   SQL Server Native Client 10.0
+   SQL Server Native Client 11.0
+   ODBC Driver 11 for SQL Server
+  }
+  
+  MySQL:
+  {
+   MySQL ODBC 3.51 Driver
+   MySQL ODBC 5.1 Driver
+   MySQL ODBC 5.2 UNICODE Driver
+   MySQL ODBC 5.2 ANSI Driver
+  }
+  
+  Informix:
+  {
+  Informix-CLI 2.5 (32 Bit)
+  }
+
+  -->
+  <SQL Name="host">
+    <IP>10.9.8.100</IP>
+    <DBName>ULink</DBName>
+    <UserID>hitsrv</UserID>
+    <UserPw>hitsrv</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+
+  <!--<SQL Name="host">
+    <IP>192.168.221.129</IP>
+    <DBName>beiguan</DBName>
+    <UserID>gnt</UserID>
+    <UserPw>GreenGu@1Gu@1@vmware</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>-->
+  
+  <SQL Name="melink">
+    <IP>10.9.8.100</IP>
+    <DBName>ULink</DBName>
+    <UserID>hitsrv</UserID>
+    <UserPw>hitsrv</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+  <SQL Name="melink1">
+    <IP>10.9.8.100</IP>
+    <DBName>ULink</DBName>
+    <UserID>hitsrv</UserID>
+    <UserPw>hitsrv</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+  <!--<SQL Name="TTlink">
+    <IP></IP>
+    <DBName></DBName>
+    <UserID></UserID>
+    <UserPw></UserPw>
+    <Path>C:\Automation\Automation.mdb</Path>
+    <Port></Port>
+    <DBMS>Access</DBMS>
+    <Driver>Microsoft Access Driver (*.mdb)</Driver>
+  </SQL>-->
+    <SQL Name="TTlink">
+    <IP>10.9.8.100</IP>
+    <DBName>ULink</DBName>
+    <UserID>hitsrv</UserID>
+    <UserPw>hitsrv</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+
+<SQL Name="Ulink1">
+    <IP>10.7.0.187</IP>
+    <DBName>lis</DBName>
+    <UserID>medicare</UserID>
+    <UserPw>caremedi</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+
+  <SQL Name="Ulink2">
+    <IP>10.7.0.187</IP>
+    <DBName>lis_ec</DBName>
+    <UserID>medicare</UserID>
+    <UserPw>caremedi</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+
+  <SQL Name="Ulink3">
+    <IP>10.7.0.187</IP>
+    <DBName>lis_dc</DBName>
+    <UserID>medicare</UserID>
+    <UserPw>caremedi</UserPw>
+    <Path></Path>
+    <Port></Port>
+    <DBMS>MSSQL</DBMS>
+    <Driver>SQL Server</Driver>
+  </SQL>
+</DataBas>

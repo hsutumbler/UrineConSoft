@@ -4,7 +4,7 @@ import datetime
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QDateEdit, QPushButton, QSplitter, QListWidget, QListWidgetItem,
-    QFrame, QMessageBox, QScrollBar, QMenu, QInputDialog
+    QFrame, QMessageBox, QScrollBar, QMenu, QInputDialog, QSizePolicy
 )
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QFont, QColor, QCursor
@@ -24,7 +24,7 @@ from services.qc_service import MasterService, QCResultService, TargetSettingSer
 
 class LJChartPage(BasePage):
     def __init__(self, user: dict):
-        super().__init__("品管圖 (L-J Chart)", "查看各項目的 Levey-Jennings Chart", user)
+        super().__init__("品管圖 (L-J Chart)", "", user)
         self._instruments = MasterService.get_instruments()
         self._build()
 
@@ -181,9 +181,10 @@ class LJChartPage(BasePage):
             level_layout = QVBoxLayout(level_widget)
             level_layout.setContentsMargins(0, 0, 0, 10)
             
-            fig = Figure(figsize=(8, 3.5), dpi=100)
+            fig = Figure(figsize=(10, 4.5), dpi=100)
             fig.patch.set_facecolor('#FDFBF0')
             canvas = FigureCanvas(fig)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             
             scrollbar = QScrollBar(Qt.Orientation.Horizontal)
             scrollbar.hide()
@@ -246,6 +247,8 @@ class LJChartPage(BasePage):
             cell_text = []
             if iqi["param_type"] == 1:
                 scatters, cell_text, num_points = self._draw_quantitative(ax, iqi, results, display_batch)
+            elif iqi["param_type"] == 3:
+                scatters, cell_text, num_points = self._draw_numeric_semi_quantitative(ax, iqi, results, display_batch)
             else:
                 scatters, cell_text, num_points = self._draw_semi_quantitative(ax, iqi, results, display_batch)
             
@@ -434,20 +437,23 @@ class LJChartPage(BasePage):
         display_batch_id = active_batch["batch_id"] if active_batch else None
         t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id)
         
+        rname = iqi.get("reagent_name", "")
+        dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
+
         r_n = len(valid_values)
-        r_mean = f"{np.mean(valid_values):.2f}" if r_n > 0 else "—"
-        r_sd = f"{np.std(valid_values, ddof=1):.3f}" if r_n > 1 else "—"
+        r_mean = f"{np.mean(valid_values):.{dec}f}" if r_n > 0 else "—"
+        r_sd = f"{np.std(valid_values, ddof=1):.{dec}f}" if r_n > 1 else "—"
         r_cv = f"{(np.std(valid_values, ddof=1) / np.mean(valid_values))*100:.1f}%" if r_n > 1 and np.mean(valid_values)!=0 else "—"
         
         t_n = t_stats["n"]
-        t_mean = f"{t_stats['mean']:.2f}" if t_stats["mean"] is not None else "—"
-        t_sd = f"{t_stats['sd']:.3f}" if t_stats["sd"] is not None else "—"
+        t_mean = f"{t_stats['mean']:.{dec}f}" if t_stats["mean"] is not None else "—"
+        t_sd = f"{t_stats['sd']:.{dec}f}" if t_stats["sd"] is not None else "—"
         t_cv = f"{(t_stats['sd'] / t_stats['mean'])*100:.1f}%" if t_stats["mean"] and t_stats["sd"] else "—"
         
         lot_no = active_batch["lot_number"] if active_batch else "未設定"
         exp_dt = active_batch["expiry_date"].strftime("%Y/%m/%d") if active_batch and active_batch["expiry_date"] else "—"
-        tm_str = f"{ts['tm']}" if ts and ts["tm"] is not None else "—"
-        tsd_str = f"{ts['tsd']}" if ts and ts["tsd"] is not None else "—"
+        tm_str = f"{ts['tm']:.{dec}f}" if ts and ts["tm"] is not None else "—"
+        tsd_str = f"{ts['tsd']:.{dec}f}" if ts and ts["tsd"] is not None else "—"
         
         cell_text = [
             ["", "", f"Lot {lot_no}", ""],
@@ -576,6 +582,124 @@ class LJChartPage(BasePage):
 
         return scatters, cell_text, len(valid_values)
 
+
+    def _draw_numeric_semi_quantitative(self, ax, iqi, results, active_batch):
+        # Numeric semi-quant (pH): Plot actual numeric values, but fixed y-axis and color bands
+        y_labels = [str(x/2) for x in range(9, 18)]
+        y_ticks = [float(x) for x in y_labels]
+        
+        valid_dates = []
+        valid_values = []
+        
+        x_acc, y_acc, data_acc = [], [], []
+        x_rej, y_rej, data_rej = [], [], []
+        x_notes, y_notes = [], []
+        x_anomaly, y_anomaly = [], []
+        
+        for r in results:
+            val = r["measured_value"]
+            if val is not None:
+                val = float(val)
+                valid_dates.append(r["result_date"])
+                valid_values.append(val)
+                idx = len(valid_dates) - 1
+                
+                if r.get("notes") and r.get("notes").strip():
+                    x_notes.append(idx)
+                    y_notes.append(val)
+                    
+                if r.get("has_anomaly"):
+                    x_anomaly.append(idx)
+                    y_anomaly.append(val)
+                
+                if r["is_accepted"]:
+                    x_acc.append(idx)
+                    y_acc.append(val)
+                    data_acc.append(r)
+                else:
+                    x_rej.append(idx)
+                    y_rej.append(val)
+                    data_rej.append(r)
+                
+        if not valid_dates:
+             ax.text(0.5, 0.5, '無有效的資料', ha='center', va='center', transform=ax.transAxes)
+             return [], [], 0
+             
+        x_all = range(len(valid_values))
+        ax.plot(x_all, valid_values, marker='', linestyle='-', color='gray', alpha=0.5)
+        
+        scatters = []
+        if x_acc:
+            sc_acc = ax.scatter(x_acc, y_acc, c='black', marker='o', zorder=5)
+            scatters.append((sc_acc, data_acc))
+        if x_rej:
+            sc_rej = ax.scatter(x_rej, y_rej, c='red', marker='o', zorder=6)
+            scatters.append((sc_rej, data_rej))
+            
+        if x_notes:
+            ax.scatter(x_notes, y_notes, facecolors='none', edgecolors='#FFA500', s=180, linewidths=2.5, zorder=4)
+            
+        if x_anomaly:
+            ax.scatter(x_anomaly, y_anomaly, facecolors='none', edgecolors='#800080', s=350, linewidths=2.5, zorder=3)
+        
+        labels = []
+        last_day = None
+        for d in valid_dates:
+            day_str = str(d.day)
+            if day_str != last_day:
+                labels.append(day_str)
+                last_day = day_str
+            else:
+                labels.append("")
+
+        ax.set_xticks(x_all)
+        ax.set_xticklabels(labels)
+        
+        ax.set_yticks(y_ticks)
+        ax.set_yticklabels(y_labels)
+        ax.set_ylim(4.25, 8.75)  # Y-axis 4.5 ~ 8.5 with some padding
+
+        ts = None
+        if active_batch:
+            ts = TargetSettingService.get_for_batch(iqi["iqi_id"], active_batch["batch_id"])
+            
+        target_str = "未設定"
+        if ts:
+            s_min = ts.get("semi_target_min")
+            s_max = ts.get("semi_target_max")
+            if s_min and s_max:
+                target_str = f"{s_min} ~ {s_max}" if s_min != s_max else s_min
+                try:
+                    min_val = float(s_min)
+                    max_val = float(s_max)
+                    ax.axhspan(min_val - 0.25, max_val + 0.25, color='#E6F2FF', alpha=0.8, zorder=1)
+                    ax.axhline(min_val - 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
+                    ax.axhline(max_val + 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
+                except ValueError:
+                    pass
+
+        # Stats
+        display_batch_id = active_batch["batch_id"] if active_batch else None
+        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id)
+        lot_no = active_batch["lot_number"] if active_batch else "未設定"
+        exp_dt = active_batch["expiry_date"].strftime("%Y/%m/%d") if active_batch and active_batch["expiry_date"] else "—"
+        
+        # Calculate Accept Rate
+        acc_rate = f"{(t_stats['accept'] / t_stats['n']) * 100:.1f}%" if t_stats['n'] > 0 else "—"
+        r_acc_rate = f"{(len(x_acc) / len(valid_values)) * 100:.1f}%" if len(valid_values) > 0 else "—"
+        
+        cell_text = [
+            ["", "", f"Lot {lot_no}", ""],
+            ["", "Target", "T.Rec", "R.Rec"],
+            ["N", "", str(t_stats["n"]), str(len(valid_values))],
+            ["Accept", "", str(t_stats["accept"]), str(len(x_acc))],
+            ["Reject", "", str(t_stats["reject"]), str(len(x_rej))],
+            ["Acc %", "", acc_rate, r_acc_rate],
+            ["Range", target_str, "", ""],
+            ["Exp.Dt", "", exp_dt, ""]
+        ]
+
+        return scatters, cell_text, len(valid_values)
     def _on_hover(self, event):
         if getattr(self, '_hover_info', None) is None:
             return

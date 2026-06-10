@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QScrollArea, QGroupBox, QMessageBox, QFileDialog,
     QGridLayout, QSizePolicy,
 )
-from PyQt6.QtCore import Qt, QDate, QDateTime, QFileSystemWatcher, QObject, QEvent
+from PyQt6.QtCore import Qt, QDate, QDateTime, QObject, QEvent
 from ui.base_page import BasePage, PAGE_STYLE, COLORS
 from services.qc_service import (
     MasterService, QCResultService,
@@ -33,32 +33,42 @@ class FocusNextFilter(QObject):
 
 class QCDataEntryPage(BasePage):
     def __init__(self, user: dict):
-        super().__init__("品管數據輸入", "手動輸入或匯入儀器傳輸檔案", user)
+        super().__init__("品管數據輸入", "", user)
         self._instruments = MasterService.get_instruments()
-        self._watcher = QFileSystemWatcher()
-        self._watcher.directoryChanged.connect(self._on_dir_changed)
         self._build()
-        self._setup_file_watcher()
 
     def _build(self):
-        tabs = QTabWidget()
+        # 共同設定區域
+        common_top = QHBoxLayout()
+        common_top.setContentsMargins(16, 8, 16, 0)
+        
+        common_top.addWidget(QLabel("試劑批號："))
+        self.cmb_reagent_batch = QComboBox()
+        common_top.addWidget(self.cmb_reagent_batch)
+        
+        common_top.addSpacing(20)
+        
+        common_top.addWidget(QLabel("品管液批號："))
+        self.cmb_qc_batch = QComboBox()
+        self.cmb_qc_batch.currentIndexChanged.connect(self._reload_manual_form)
+        common_top.addWidget(self.cmb_qc_batch)
+        
+        common_top.addStretch()
+        self.content_layout.addLayout(common_top)
+        self.content_layout.addSpacing(0)
 
-        # Tab 1: 手動輸入
+        # 手動輸入介面
         manual_tab = self._build_manual_tab()
-        tabs.addTab(manual_tab, "📝 手動輸入")
-
-        # Tab 2: 儀器傳輸
-        file_tab = self._build_file_tab()
-        tabs.addTab(file_tab, "📂 儀器傳輸（File Drop）")
-
-        self.content_layout.addWidget(tabs)
+        self.content_layout.addWidget(manual_tab)
+        
+        self._load_reagent_batches()
 
     # ── 手動輸入 ────────────────────────────────────────────
 
     def _build_manual_tab(self) -> QWidget:
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(16, 0, 16, 16)
         layout.setSpacing(12)
 
         # 上方：選擇儀器 + 日期
@@ -83,18 +93,10 @@ class QCDataEntryPage(BasePage):
         self.cmb_time_mode.currentIndexChanged.connect(lambda i: self.qc_date.setVisible(i == 1))
         
         top.addWidget(self.qc_date)
-        top.addSpacing(20)
-        
-        top.addWidget(QLabel("品管液："))
-        self.cmb_qc_batch = QComboBox()
-        self.cmb_qc_batch.currentIndexChanged.connect(self._reload_manual_form)
-        top.addWidget(self.cmb_qc_batch)
         
         top.addStretch()
         layout.addLayout(top)
 
-
-        
         self._load_qc_batches()
 
         divider = QFrame()
@@ -120,6 +122,34 @@ class QCDataEntryPage(BasePage):
         self.focus_filter = FocusNextFilter(self)
         self._reload_manual_form()
         return tab
+
+    def _load_reagent_batches(self):
+        self.cmb_reagent_batch.blockSignals(True)
+        self.cmb_reagent_batch.clear()
+        
+        batches = ReagentBatchService.get_all()
+        active_index = -1
+        
+        for b in batches:
+            if b.get("is_archived"): continue
+            
+            label = b["lot_number"]
+            if b.get("is_active"):
+                label += " [使用中]"
+                active_index = self.cmb_reagent_batch.count()
+            else:
+                label += " [待允收]"
+                
+            self.cmb_reagent_batch.addItem(label, b["batch_id"])
+            
+        self.cmb_reagent_batch.setMinimumContentsLength(20)
+        if self.cmb_reagent_batch.view():
+            self.cmb_reagent_batch.view().setMinimumWidth(280)
+            
+        if active_index >= 0:
+            self.cmb_reagent_batch.setCurrentIndex(active_index)
+            
+        self.cmb_reagent_batch.blockSignals(False)
 
     def _load_qc_batches(self):
         self.cmb_qc_batch.blockSignals(True)
@@ -203,6 +233,7 @@ class QCDataEntryPage(BasePage):
         self.t_input.verticalHeader().setVisible(False)
         
         self._row_param_types = {}
+        self._row_decimals = {}
         
         class InputDelegate(QStyledItemDelegate):
             def eventFilter(self, editor, event):
@@ -244,10 +275,15 @@ class QCDataEntryPage(BasePage):
                         cb = QComboBox(parent)
                         cb.addItems(SEMI_OPTIONS)
                         return cb
+                    elif ptype == 3:
+                        cb = QComboBox(parent)
+                        cb.addItems([str(x/2) for x in range(9, 18)] + ["—（未測）"])
+                        return cb
                     else:
+                        decimals = self.parent()._row_decimals.get(row, 3)
                         sp = QDoubleSpinBox(parent)
                         sp.setRange(-9999, 9999)
-                        sp.setDecimals(3)
+                        sp.setDecimals(decimals)
                         sp.setSpecialValueText("—")
                         sp.setMinimum(-9999)
                         return sp
@@ -281,6 +317,13 @@ class QCDataEntryPage(BasePage):
             
             self._row_param_types[row] = rdata["param_type"]
             
+            if rname == "SG":
+                self._row_decimals[row] = 3
+            elif rname in ("RBC", "WBC"):
+                self._row_decimals[row] = 1
+            else:
+                self._row_decimals[row] = 3
+                
             it_name = QTableWidgetItem(disp_name)
             it_name.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             it_name.setFlags(it_name.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -328,6 +371,7 @@ class QCDataEntryPage(BasePage):
             row += 1
             
         self.table_container.addWidget(self.t_input)
+        self.t_input.itemChanged.connect(self._on_item_changed)
 
     def _get_range_string(self, iqi_id, param_type, qc_batch_id):
         from services.qc_service import TargetSettingService
@@ -345,7 +389,7 @@ class QCDataEntryPage(BasePage):
                 tsd = float(ts["tsd"])
                 return f"{tm - 2*tsd:.4g} ~ {tm + 2*tsd:.4g}"
             return "未設定"
-        else:
+        elif param_type in (2, 3):
             s_min = ts.get("semi_target_min")
             s_max = ts.get("semi_target_max")
             if s_min and s_max:
@@ -359,6 +403,12 @@ class QCDataEntryPage(BasePage):
             combo.addItems(SEMI_OPTIONS)
             combo.installEventFilter(self.focus_filter)
             return combo
+        elif param_type == 3:
+            combo = QComboBox()
+            combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            combo.addItems([str(x/2) for x in range(9, 18)] + ["—（未測）"])
+            combo.installEventFilter(self.focus_filter)
+            return combo
         else:
             sp = QDoubleSpinBox()
             sp.setRange(-9999, 9999)
@@ -368,6 +418,43 @@ class QCDataEntryPage(BasePage):
             sp.setMinimum(-9999)
             sp.installEventFilter(self.focus_filter)
             return sp
+
+    def _on_item_changed(self, item):
+        col = item.column()
+        if col not in (1, 3): return
+        val_str = item.text().strip()
+        
+        from PyQt6.QtGui import QColor, QBrush
+        if not val_str or val_str == "—" or val_str == "—（未測）":
+            item.setForeground(QBrush(QColor("black")))
+            return
+            
+        row = item.row()
+        range_item = self.t_input.item(row, col + 1)
+        if not range_item: return
+        range_str = range_item.text().strip()
+        
+        is_valid = True
+        if range_str != "未設定":
+            if " ~ " in range_str:
+                parts = range_str.split(" ~ ")
+                if len(parts) == 2:
+                    try:
+                        val = float(val_str)
+                        min_v = float(parts[0])
+                        max_v = float(parts[1])
+                        is_valid = (min_v <= val <= max_v)
+                    except ValueError:
+                        SEMI_ORDER = {"Neg": 0, "Trace": 1, "1+": 2, "2+": 3, "3+": 4}
+                        if val_str in SEMI_ORDER and parts[0] in SEMI_ORDER and parts[1] in SEMI_ORDER:
+                            is_valid = (SEMI_ORDER[parts[0]] <= SEMI_ORDER[val_str] <= SEMI_ORDER[parts[1]])
+            else:
+                is_valid = (val_str == range_str)
+                
+        if is_valid:
+            item.setForeground(QBrush(QColor("black")))
+        else:
+            item.setForeground(QBrush(QColor("red")))
 
     def _save_manual(self):
         if not self._manual_widgets or not hasattr(self, 't_input'):
@@ -391,7 +478,7 @@ class QCDataEntryPage(BasePage):
         else:
             q_date = self.qc_date.dateTime().toPyDateTime()
             
-        saved = 0
+        entries_to_save = []
         flags = []
 
         for iqi_id, w in self._manual_widgets.items():
@@ -409,6 +496,12 @@ class QCDataEntryPage(BasePage):
             if param_type == 2:
                 qual = val_str
                 mval = None
+            elif param_type == 3:
+                try:
+                    mval = float(val_str)
+                    qual = None
+                except ValueError:
+                    continue
             else:
                 try:
                     mval = float(val_str)
@@ -416,49 +509,61 @@ class QCDataEntryPage(BasePage):
                 except ValueError:
                     continue
 
-            # 判斷這個 iqi 屬於哪個 level 的批號
-            # 簡化：奇數 iqi_id 對應 L1，偶數對應 L2（依 seed data 規律）
             qc_batch_id = None
             if iqi_id % 2 == 1 and l1_batch:
                 qc_batch_id = l1_batch["batch_id"]
             elif iqi_id % 2 == 0 and l2_batch:
                 qc_batch_id = l2_batch["batch_id"]
 
-            result_id = QCResultService.save_result(
-                iqi_id=iqi_id,
+            is_accepted, w_flag = QCResultService._check_westgard(
+                iqi_id, q_date.date(), mval, qual, qc_batch_id
+            )
+            
+            entries_to_save.append({
+                "iqi_id": iqi_id,
+                "mval": mval,
+                "qual": qual,
+                "qc_batch_id": qc_batch_id
+            })
+            
+            if not is_accepted or w_flag:
+                item_name = self.t_input.item(row, 0).text()
+                level_str = "Level 1" if col == 1 else "Level 2"
+                flag_text = w_flag if w_flag else "超出範圍"
+                flags.append(f"• {item_name} ({level_str}): {flag_text}")
+
+        if not entries_to_save:
+            self.alert("提示", "沒有輸入任何數值，請填寫後再儲存。")
+            return
+
+        if flags:
+            msg = "有部分項目超出合格範圍：\n" + "\n".join(flags) + "\n\n確定要儲存嗎？"
+            reply = QMessageBox.question(
+                self, '異常確認', msg,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+
+        # Proceed to save
+        saved = 0
+        for entry in entries_to_save:
+            QCResultService.save_result(
+                iqi_id=entry["iqi_id"],
                 result_date=q_date,
-                reagent_batch_id=rb["batch_id"] if rb else None,
-                qc_batch_id=qc_batch_id,
-                measured_value=mval,
-                qualitative_result=qual,
+                reagent_batch_id=self.cmb_reagent_batch.currentData(),
+                qc_batch_id=entry["qc_batch_id"],
+                measured_value=entry["mval"],
+                qualitative_result=entry["qual"],
                 notes=None,
                 entered_by=self.user["user_id"],
                 source=1,
             )
-            # 取得 westgard 判斷結果
-            from database.connection import DBContext
-            with DBContext() as (_, cur):
-                cur.execute(
-                    "SELECT westgard_flag, is_accepted FROM qc_results WHERE result_id=%s",
-                    (result_id,)
-                )
-                row_db = cur.fetchone()
-                if row_db and row_db["westgard_flag"]:
-                    item_name = self.t_input.item(row, 0).text()
-                    level_str = "Level 1" if col == 1 else "Level 2"
-                    flags.append(f"• {item_name} ({level_str}): {row_db['westgard_flag']}")
             saved += 1
 
-        if saved == 0:
-            self.alert("提示", "沒有輸入任何數值，請填寫後再儲存。")
-            return
-
-        msg = f"已儲存 {saved} 筆品管結果。"
-        if flags:
-            msg += f"\n\n⚠️ Westgard 異常項目：\n" + "\n".join(flags)
-            self.warn("品管警示", msg)
-        else:
-            self.alert("完成", msg)
+        self.alert("完成", f"已成功儲存 {saved} 筆品管結果。")
+        self._reload_manual_form()
 
     # ── 儀器傳輸（File Drop）────────────────────────────────
 
@@ -557,7 +662,7 @@ class QCDataEntryPage(BasePage):
         """解析 CSV 並寫入 qc_results。"""
         self.import_log.append(f"\n[{datetime.now():%H:%M:%S}] 匯入：{os.path.basename(fpath)}")
 
-        rb = ReagentBatchService.get_active()
+        rb_id = self.cmb_reagent_batch.currentData()
         active_qc = QCBatchService.get_active_batches()
         
         batches = self.cmb_qc_batch.currentData()
@@ -615,7 +720,7 @@ class QCDataEntryPage(BasePage):
                         QCResultService.save_result(
                             iqi_id=iqi_id,
                             result_date=r_date,
-                            reagent_batch_id=rb["batch_id"] if rb else None,
+                            reagent_batch_id=rb_id,
                             qc_batch_id=qc_batch_id,
                             measured_value=mval,
                             qualitative_result=qual,

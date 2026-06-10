@@ -226,7 +226,7 @@ INSERT IGNORE INTO instruments (instrument_id, dept_id, instrument_name) VALUES
 INSERT IGNORE INTO reagents
     (reagent_id, reagent_name, reagent_label, brand, param_type, display_order)
 VALUES
-(1,  'pH',  '酸鹼值',        'LabStrip', 1, 1),
+(1,  'pH',  '酸鹼值',        'LabStrip', 3, 1),
 (2,  'SG',  '比重',          'LabStrip', 1, 2),
 (3,  'PRO', '蛋白質',        'LabStrip', 2, 3),
 (4,  'GLU', '葡萄糖',        'LabStrip', 2, 4),

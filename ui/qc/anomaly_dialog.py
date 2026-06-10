@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFormLayout, QFrame, QMessageBox, QTextEdit, QComboBox, QWidget, QCheckBox
+    QPushButton, QFormLayout, QFrame, QMessageBox, QTextEdit, QComboBox, QWidget, QCheckBox, QListWidget
 )
 from PyQt6.QtCore import Qt
 import json
@@ -202,10 +202,14 @@ class AnomalyRecordDialog(QDialog):
         btn_save_phrase = QPushButton("存為片語")
         btn_save_phrase.clicked.connect(lambda: self._save_phrase(category))
         
+        btn_manage_phrase = QPushButton("⚙️ 片語管理")
+        btn_manage_phrase.clicked.connect(lambda: self._open_phrase_manager(label_text, category))
+        
         header.addWidget(lbl)
         header.addStretch()
         header.addWidget(cmb)
         header.addWidget(btn_save_phrase)
+        header.addWidget(btn_manage_phrase)
         
         edit = QTextEdit()
         
@@ -213,6 +217,7 @@ class AnomalyRecordDialog(QDialog):
         if is_readonly:
             cmb.hide()
             btn_save_phrase.hide()
+            btn_manage_phrase.hide()
             edit.setReadOnly(True)
             edit.setStyleSheet(f"background-color: {COLORS.get('bg_input', '#FFFFFF')}; color: #333333; border: 1px solid {COLORS.get('border', '#CCCCCC')}; border-radius: 4px;")
             
@@ -256,6 +261,20 @@ class AnomalyRecordDialog(QDialog):
             
         AnomalyService.add_phrase(category, text, self.user_data["user_id"])
         QMessageBox.information(self, "成功", "片語已儲存")
+        
+        # 重新整理下拉選單
+        cmb = self.fields[category]["cmb"]
+        cmb.blockSignals(True)
+        cmb.clear()
+        cmb.addItem("--- 載入片語 ---", "")
+        phrases = AnomalyService.get_phrases(category)
+        for p in phrases:
+            cmb.addItem(p["text"][:15] + "...", p["text"])
+        cmb.blockSignals(False)
+
+    def _open_phrase_manager(self, label_text, category):
+        dialog = PhraseManagementDialog(self, label_text, category)
+        dialog.exec()
         
         # 重新整理下拉選單
         cmb = self.fields[category]["cmb"]
@@ -447,3 +466,82 @@ class AnomalyRecordDialog(QDialog):
         doc.print(printer)
         
         QMessageBox.information(self, "成功", f"PDF 已成功儲存至：\\n{filepath}")
+
+class PhraseManagementDialog(QDialog):
+    def __init__(self, parent, category_name, category_id):
+        super().__init__(parent)
+        self.category_id = category_id
+        self.setWindowTitle(f"片語管理 - {category_name}")
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(400)
+        self._build_ui()
+        self._load_data()
+
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        
+        lbl_hint = QLabel("選取上方片語後，可於下方編輯內容。")
+        lbl_hint.setStyleSheet("color: #666666; font-size: 13px;")
+        layout.addWidget(lbl_hint)
+        
+        self.list_widget = QListWidget()
+        self.list_widget.currentRowChanged.connect(self._on_row_changed)
+        layout.addWidget(self.list_widget, 1)
+        
+        self.edit_text = QTextEdit()
+        layout.addWidget(self.edit_text, 1)
+        
+        btn_layout = QHBoxLayout()
+        self.btn_save = QPushButton("儲存變更")
+        self.btn_save.setObjectName("btn_primary")
+        self.btn_save.clicked.connect(self._save_phrase)
+        self.btn_delete = QPushButton("刪除選取片語")
+        self.btn_delete.clicked.connect(self._delete_phrase)
+        btn_close = QPushButton("關閉")
+        btn_close.clicked.connect(self.accept)
+        
+        btn_layout.addWidget(self.btn_delete)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_save)
+        btn_layout.addWidget(btn_close)
+        
+        layout.addLayout(btn_layout)
+
+    def _load_data(self):
+        self.list_widget.clear()
+        self.phrases = AnomalyService.get_phrases(self.category_id)
+        for p in self.phrases:
+            # 顯示前30個字元作為列表項目
+            display_text = p["text"].replace('\\n', ' ')
+            if len(display_text) > 30:
+                display_text = display_text[:30] + "..."
+            self.list_widget.addItem(display_text)
+            
+    def _on_row_changed(self, row):
+        if row >= 0 and row < len(self.phrases):
+            self.edit_text.setPlainText(self.phrases[row]["text"])
+        else:
+            self.edit_text.clear()
+
+    def _save_phrase(self):
+        row = self.list_widget.currentRow()
+        if row < 0: return
+        new_text = self.edit_text.toPlainText().strip()
+        if not new_text:
+            QMessageBox.warning(self, "錯誤", "片語內容不能為空。")
+            return
+        template_id = self.phrases[row]["id"]
+        AnomalyService.update_phrase(template_id, new_text)
+        QMessageBox.information(self, "成功", "片語已成功更新。")
+        self._load_data()
+        self.list_widget.setCurrentRow(row)
+
+    def _delete_phrase(self):
+        row = self.list_widget.currentRow()
+        if row < 0: return
+        reply = QMessageBox.question(self, '確認刪除', '確定要刪除這個片語嗎？刪除後無法復原。', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            template_id = self.phrases[row]["id"]
+            AnomalyService.delete_phrase(template_id)
+            self._load_data()
+            self.edit_text.clear()

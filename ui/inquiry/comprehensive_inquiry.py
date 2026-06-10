@@ -3,7 +3,7 @@ from datetime import datetime, date
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, 
-    QDateEdit, QPushButton, QStackedWidget, QMessageBox, QFrame
+    QDateEdit, QPushButton, QStackedWidget, QMessageBox, QFrame, QGridLayout
 )
 from PyQt6.QtCore import Qt, QDate
 
@@ -16,6 +16,7 @@ from ui.inquiry.reagent_inquiry import ReagentInquiryPage
 from ui.inquiry.qc_inquiry import QCInquiryPage
 from ui.inquiry.report_inquiry import ReportInquiryPage
 from ui.inquiry.anomaly_inquiry import AnomalyInquiryPage
+from ui.inquiry.qc_target_history_inquiry import QCTargetHistoryInquiryPage
 
 class ComprehensiveInquiryPage(BasePage):
     def __init__(self, user: dict):
@@ -25,80 +26,174 @@ class ComprehensiveInquiryPage(BasePage):
         self._on_type_changed()
 
     def _build_ui(self):
-        filter_layout = QVBoxLayout()
+        # Traditional Dashboard Grid Style Filter
+        grid_container = QFrame()
+        grid_container.setObjectName("grid_bg")
+        grid_container.setStyleSheet("""
+            QFrame#grid_bg {
+                background-color: #E6E4DD;
+                border: 1px solid #A0A0A0;
+                padding: 6px;
+                margin-bottom: 10px;
+            }
+            QLabel[class="grid_label"] {
+                background-color: #008B8B;
+                color: white;
+                padding: 4px 10px;
+                font-size: 13px;
+                border: 1px solid #808080;
+            }
+            QComboBox, QDateEdit {
+                background-color: #FFFFFF;
+                color: black;
+                border: 1px solid #808080;
+                border-radius: 0px;
+                padding: 3px 6px;
+                min-height: 24px;
+                font-size: 13px;
+            }
+            QComboBox {
+                min-width: 150px;
+            }
+            QComboBox::drop-down, QDateEdit::drop-down {
+                border-left: 1px solid #808080;
+                background: #E0E0E0;
+                width: 20px;
+                border-radius: 0px;
+            }
+            QWidget#grid_inner {
+                background-color: transparent;
+            }
+            QWidget[class="date_cell"] {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton[class="grid_btn"] {
+                background-color: #F0F0F0;
+                border: 1px solid #808080;
+                border-radius: 2px;
+                padding: 5px 15px;
+                min-height: 26px;
+                color: black;
+            }
+            QPushButton[class="grid_btn_primary"] {
+                background-color: #F0F0F0;
+                border: 1px solid #808080;
+                border-radius: 2px;
+                font-size: 14px;
+                color: black;
+                font-weight: bold;
+                min-width: 60px;
+                min-height: 56px;
+            }
+            QPushButton:hover { background-color: #FFFFFF; }
+            QPushButton:pressed { background-color: #D0D0D0; }
+        """)
+
+        main_hbox = QHBoxLayout(grid_container)
+        main_hbox.setContentsMargins(5, 5, 5, 5)
+        main_hbox.setSpacing(10)
         
-        row1 = QHBoxLayout()
-        row1.addWidget(QLabel("查詢種類："))
+        left_grid_widget = QWidget()
+        left_grid_widget.setObjectName("grid_inner")
+        self.left_grid = QGridLayout(left_grid_widget)
+        self.left_grid.setSpacing(2)
+        self.left_grid.setContentsMargins(0, 0, 0, 0)
+        
+        # Row 0
+        lbl_type = QLabel("報表類別")
+        lbl_type.setProperty("class", "grid_label")
+        lbl_type.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         self.cmb_type = QComboBox()
-        self.cmb_type.addItems(["品管數據查詢", "試劑允收查詢", "品管液允收查詢", "品管報表", "異常紀錄查詢"])
-        self.cmb_type.setMinimumWidth(150)
-        self.cmb_type.currentIndexChanged.connect(self._on_type_changed)
-        row1.addWidget(self.cmb_type)
+        self.cmb_type.addItems(["品管數據查詢", "試劑允收查詢", "品管液允收查詢", "品管報表", "異常紀錄查詢", "品管範圍修訂查詢"])
         
-        row1.addSpacing(20)
-        row1.addWidget(QLabel("日期區間："))
+        lbl_date = QLabel("日期區間")
+        lbl_date.setProperty("class", "grid_label")
+        lbl_date.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        date_cell = QWidget()
+        date_cell.setProperty("class", "date_cell")
+        date_lay = QHBoxLayout(date_cell)
+        date_lay.setContentsMargins(2, 0, 2, 0)
+        date_lay.setSpacing(2)
+        
         self.date_from = QDateEdit()
         self.date_from.setCalendarPopup(True)
         self.date_from.setDisplayFormat("yyyy/MM/dd")
-        self.date_from.setMinimumWidth(120)
         self.date_from.setDate(QDate.currentDate().addDays(-30))
         
         self.date_to = QDateEdit()
         self.date_to.setCalendarPopup(True)
         self.date_to.setDisplayFormat("yyyy/MM/dd")
-        self.date_to.setMinimumWidth(120)
         self.date_to.setDate(QDate.currentDate())
         
-        row1.addWidget(self.date_from)
-        row1.addWidget(QLabel(" ~ "))
-        row1.addWidget(self.date_to)
+        date_lay.addWidget(self.date_from)
+        date_lay.addWidget(QLabel("~"))
+        date_lay.addWidget(self.date_to)
         
-        row1.addSpacing(20)
+        self.left_grid.addWidget(lbl_type, 0, 0)
+        self.left_grid.addWidget(self.cmb_type, 0, 1)
+        self.left_grid.addWidget(lbl_date, 0, 2)
+        self.left_grid.addWidget(date_cell, 0, 3)
         
-        self.lbl_dynamic = QLabel("選擇儀器：")
-        row1.addWidget(self.lbl_dynamic)
+        # Row 1 items
+        self.lbl_dynamic = QLabel("選擇儀器")
+        self.lbl_dynamic.setProperty("class", "grid_label")
+        self.lbl_dynamic.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.cmb_dynamic = QComboBox()
-        self.cmb_dynamic.setMinimumWidth(120)
-        self.cmb_dynamic.currentIndexChanged.connect(self._on_dynamic_changed)
-        row1.addWidget(self.cmb_dynamic)
         
-        row1.addSpacing(20)
-        self.lbl_lot = QLabel("批號：")
-        row1.addWidget(self.lbl_lot)
+        self.lbl_lot = QLabel("批號")
+        self.lbl_lot.setProperty("class", "grid_label")
+        self.lbl_lot.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.cmb_lot = QComboBox()
-        self.cmb_lot.setMinimumWidth(150)
         self.cmb_lot.addItem("全部")
-        row1.addWidget(self.cmb_lot)
         
-        row1.addStretch()
-        filter_layout.addLayout(row1)
+        self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
+        self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
+        self.left_grid.addWidget(self.lbl_lot, 1, 2)
+        self.left_grid.addWidget(self.cmb_lot, 1, 3)
         
-        row2 = QHBoxLayout()
-        row2.addStretch()
-        btn_query = QPushButton("🔍 查詢")
-        btn_query.setObjectName("btn_primary")
-        btn_query.setMinimumWidth(100)
+        self.left_grid.setColumnStretch(1, 1)
+        self.left_grid.setColumnStretch(3, 1)
+        
+        main_hbox.addWidget(left_grid_widget)
+        
+        # Query Button
+        btn_query = QPushButton("查  詢")
+        btn_query.setProperty("class", "grid_btn_primary")
         btn_query.clicked.connect(self._do_query)
-        row2.addWidget(btn_query)
+        main_hbox.addWidget(btn_query)
         
-        self.btn_view = QPushButton("檢視")
-        self.btn_view.setMinimumWidth(80)
+        # Right Buttons
+        right_vbox = QVBoxLayout()
+        right_vbox.setSpacing(4)
+        right_vbox.setContentsMargins(0, 0, 0, 0)
+        
+        self.btn_view = QPushButton("檢  視")
+        self.btn_view.setProperty("class", "grid_btn")
         self.btn_view.clicked.connect(self._do_view)
-        row2.addWidget(self.btn_view)
         
-        # We handle printing via the subpages since they already have their own print methods.
         self.btn_print = QPushButton("列印 / 匯出 PDF")
-        self.btn_print.setMinimumWidth(150)
+        self.btn_print.setProperty("class", "grid_btn")
         self.btn_print.clicked.connect(self._do_print)
-        row2.addWidget(self.btn_print)
-        row2.addStretch()
-        filter_layout.addLayout(row2)
         
-        self.content_layout.addLayout(filter_layout)
+        right_vbox.addWidget(self.btn_view)
+        right_vbox.addWidget(self.btn_print)
+        
+        main_hbox.addLayout(right_vbox)
+        main_hbox.addStretch()
+        
+        self.content_layout.addWidget(grid_container)
+        
+        # Wire up type changed after elements are created
+        self.cmb_type.currentIndexChanged.connect(self._on_type_changed)
+        self.date_from.dateChanged.connect(self._on_dynamic_changed)
+        self.date_to.dateChanged.connect(self._on_dynamic_changed)
         
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
-        line.setStyleSheet("color: #ccc; margin-top: 10px; margin-bottom: 10px;")
+        line.setStyleSheet("color: #ccc; margin-top: 5px; margin-bottom: 5px;")
         self.content_layout.addWidget(line)
         
         # Stacked Widget for subpages
@@ -110,11 +205,18 @@ class ComprehensiveInquiryPage(BasePage):
         self.page_qc = QCInquiryPage(self.user, is_subpage=True)
         self.page_report = ReportInquiryPage(self.user, is_subpage=True)
         self.page_anomaly = AnomalyInquiryPage(self.user, is_subpage=True)
+        self.page_target_history = QCTargetHistoryInquiryPage(self.user, is_subpage=True)
         
-        for p in [self.page_raw_qc, self.page_reagent, self.page_qc, self.page_report, self.page_anomaly]:
+        for p in [self.page_raw_qc, self.page_reagent, self.page_qc, self.page_report, self.page_anomaly, self.page_target_history]:
             # hide their default title and subtitle using the header_widget we created
             if hasattr(p, 'header_widget'):
                 p.header_widget.hide()
+            
+            # Remove double padding inherited from BasePage
+            p.layout().setContentsMargins(0, 0, 0, 0)
+            if hasattr(p, 'content_layout'):
+                p.content_layout.setContentsMargins(0, 0, 0, 0)
+                
             self.stack.addWidget(p)
             
         self.content_layout.addWidget(self.stack, 1)
@@ -134,21 +236,33 @@ class ComprehensiveInquiryPage(BasePage):
         self.cmb_lot.addItem("全部")
         
         if idx == 0 or idx == 3:  # Raw QC & QC Report
-            self.lbl_dynamic.setText("選擇儀器：")
+            self.lbl_dynamic.setText("儀器名稱")
             self.lbl_dynamic.setVisible(True)
             self.cmb_dynamic.setVisible(True)
+            self.lbl_lot.setText("品管批號")
             self.lbl_lot.setVisible(True)
             self.cmb_lot.setVisible(True)
             self.btn_view.setVisible(False)
+            
+            self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
+            self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
+            self.left_grid.addWidget(self.lbl_lot, 1, 2)
+            self.left_grid.addWidget(self.cmb_lot, 1, 3)
+            
             for inst in self.instruments:
                 self.cmb_dynamic.addItem(inst["instrument_name"], inst)
                 
         elif idx == 1:  # Reagent Acceptance
             self.lbl_dynamic.setVisible(False)
             self.cmb_dynamic.setVisible(False)
+            self.lbl_lot.setText("試劑名稱")
             self.lbl_lot.setVisible(True)
             self.cmb_lot.setVisible(True)
             self.btn_view.setVisible(True)
+            
+            # Move lot to the left to fill space
+            self.left_grid.addWidget(self.lbl_lot, 1, 0)
+            self.left_grid.addWidget(self.cmb_lot, 1, 1)
                 
         elif idx == 2:  # QC Acceptance
             self.lbl_dynamic.setVisible(False)
@@ -158,13 +272,34 @@ class ComprehensiveInquiryPage(BasePage):
             self.btn_view.setVisible(True)
             
         elif idx == 4:  # Anomaly Records
-            self.lbl_dynamic.setText("選擇儀器：")
+            self.lbl_dynamic.setText("儀器名稱")
             self.lbl_dynamic.setVisible(True)
             self.cmb_dynamic.setVisible(True)
             self.lbl_lot.setVisible(False)
             self.cmb_lot.setVisible(False)
             self.btn_view.setVisible(True)
             self.cmb_dynamic.addItem("全部儀器", None)
+            
+            self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
+            self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
+            
+            for inst in self.instruments:
+                self.cmb_dynamic.addItem(inst["instrument_name"], inst)
+                
+        elif idx == 5:  # QC Target History
+            self.lbl_dynamic.setText("儀器名稱")
+            self.lbl_dynamic.setVisible(True)
+            self.cmb_dynamic.setVisible(True)
+            self.lbl_lot.setText("品管批號")
+            self.lbl_lot.setVisible(True)
+            self.cmb_lot.setVisible(True)
+            self.btn_view.setVisible(True)
+            
+            self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
+            self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
+            self.left_grid.addWidget(self.lbl_lot, 1, 2)
+            self.left_grid.addWidget(self.cmb_lot, 1, 3)
+            
             for inst in self.instruments:
                 self.cmb_dynamic.addItem(inst["instrument_name"], inst)
                 
@@ -178,16 +313,27 @@ class ComprehensiveInquiryPage(BasePage):
         self.cmb_lot.clear()
         self.cmb_lot.addItem("全部")
         
-        if idx == 0 or idx == 3:  # Raw QC & QC Report
+        if idx in (0, 3, 5):  # Raw QC, QC Report, QC Target History
             inst = self.cmb_dynamic.currentData()
             if inst:
-                # fetch QC batches for this instrument?
-                # Using QCBatchService.get_batches() 
                 from services.qc_service import QCBatchService
+                from datetime import date
                 batches = QCBatchService.get_all()
-                # Simplified: just show all active/recent QC batches
+                d_from = self.date_from.date().toPyDate()
+                d_to = self.date_to.date().toPyDate()
+                
+                seen_lots = set()
                 for b in batches:
-                    self.cmb_lot.addItem(f"{b['lot_number']} ({b['level_name']})", b)
+                    b_start = b["open_date"]
+                    if not b_start:
+                        b_start = b["created_at"].date() if b.get("created_at") else date.min
+                    b_end = b["expiry_date"] or date.max
+                    
+                    if b_start <= d_to and b_end >= d_from:
+                        lot_str = f"{b['lot_number']} ({b['level_name']})"
+                        if lot_str not in seen_lots:
+                            seen_lots.add(lot_str)
+                            self.cmb_lot.addItem(lot_str, b)
                     
         elif idx == 1:  # Reagent Acceptance
             from services.qc_service import ReagentBatchService
@@ -221,6 +367,10 @@ class ComprehensiveInquiryPage(BasePage):
         elif idx == 4:
             inst = self.cmb_dynamic.currentData()
             self.page_anomaly.execute_query(d_from, d_to, inst)
+        elif idx == 5:
+            inst = self.cmb_dynamic.currentData()
+            lot = self.cmb_lot.currentData()
+            self.page_target_history.execute_query(d_from, d_to, inst, lot)
 
     def _do_view(self):
         idx = self.cmb_type.currentIndex()
@@ -230,6 +380,8 @@ class ComprehensiveInquiryPage(BasePage):
             self.page_qc._on_view_clicked()
         elif idx == 4:
             self.page_anomaly._on_view_clicked()
+        elif idx == 5:
+            self.page_target_history._on_view_clicked()
 
     def _do_print(self):
         idx = self.cmb_type.currentIndex()
@@ -243,3 +395,5 @@ class ComprehensiveInquiryPage(BasePage):
             self.page_report._print_report()
         elif idx == 4:
             self.page_anomaly._print_report()
+        elif idx == 5:
+            self.page_target_history._print_report()

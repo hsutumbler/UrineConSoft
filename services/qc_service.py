@@ -72,10 +72,9 @@ class ReagentBatchService:
         with DBContext() as (_, cur):
             cur.execute(
                 "SELECT b.batch_id, b.lot_number, b.expiry_date, b.open_date, "
-                "b.is_active, b.acceptance_status, b.notes, b.created_at, u.name AS created_by_name "
+                "b.is_active, b.is_archived, b.acceptance_status, b.notes, b.created_at, u.name AS created_by_name "
                 "FROM reagent_batches b "
                 "JOIN users u ON b.created_by = u.user_id "
-                "WHERE b.is_archived = FALSE "
                 "ORDER BY b.created_at DESC"
             )
             return cur.fetchall()
@@ -143,7 +142,7 @@ class ReagentBatchService:
                     data[rname] = {'param_type': row['param_type'], 'Level 1': None, 'Level 2': None, 'Target 1': None, 'Target 2': None}
                 
                 lvl = row["level_name"]
-                val = row["measured_value"] if row["param_type"] == 1 else row["qualitative_result"]
+                val = row["measured_value"] if row["param_type"] in (1, 3) else row["qualitative_result"]
                 data[rname][lvl] = val
                 
                 # Fetch target
@@ -246,7 +245,8 @@ class QCBatchService:
         with DBContext() as (_, cur):
             # Fetch qualitative results
             cur.execute(
-                "SELECT res.iqi_id, r.reagent_name, r.reagent_label, res.qualitative_result, "
+                "SELECT res.iqi_id, r.reagent_name, r.reagent_label, "
+                "COALESCE(res.qualitative_result, CAST(res.measured_value AS CHAR)) AS qualitative_result, "
                 "ts.semi_target_min, ts.semi_target_max "
                 "FROM qc_results res "
                 "JOIN instrument_qc_items iqi ON res.iqi_id = iqi.iqi_id "
@@ -256,7 +256,7 @@ class QCBatchService:
                 "  WHERE ts2.iqi_id = res.iqi_id AND ts2.qc_batch_id = res.qc_batch_id "
                 "  ORDER BY set_at DESC LIMIT 1"
                 ") "
-                "WHERE res.qc_batch_id=%s AND r.param_type=2 "
+                "WHERE res.qc_batch_id=%s AND r.param_type IN (2, 3) "
                 "AND DATE(res.result_date) BETWEEN %s AND %s",
                 (batch_id, start_date, end_date)
             )
@@ -637,6 +637,18 @@ class QCResultService:
                 else:
                     return False, "Out of Range"
             return True, None
+
+        # 數值半定量判定 (param_type=3)
+        if value is not None and ts and ts.get("semi_target_min") is not None and ts.get("tm") is None:
+            try:
+                min_val = float(ts["semi_target_min"])
+                max_val = float(ts["semi_target_max"])
+                if min_val <= value <= max_val:
+                    return True, None
+                else:
+                    return False, "Out of Range"
+            except (ValueError, TypeError):
+                return True, None
 
         if not ts or ts.get("tm") is None or ts.get("tsd") is None:
             return True, None

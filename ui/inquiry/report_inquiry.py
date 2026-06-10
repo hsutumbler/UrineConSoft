@@ -141,10 +141,13 @@ class ReportInquiryPage(BasePage):
                 r = self.table_quant.rowCount()
                 self.table_quant.insertRow(r)
                 
-                tm = f"{rec['tm']:.4f}" if rec.get('tm') is not None else "—"
-                mean = f"{rec['mean']:.4f}"
-                tsd = f"{rec['tsd']:.4f}" if rec.get('tsd') is not None else "—"
-                sd = f"{rec['sd']:.4f}"
+                # Dynamic precision
+                dec = 3 if param == "SG" else (1 if param in ("RBC", "WBC") else 2)
+                
+                tm = f"{rec['tm']:.{dec}f}" if rec.get('tm') is not None else "—"
+                mean = f"{rec['mean']:.{dec}f}"
+                tsd = f"{rec['tsd']:.{dec}f}" if rec.get('tsd') is not None else "—"
+                sd = f"{rec['sd']:.{dec}f}"
                 cv = f"{rec['cv']:.2f}%"
                 bias = f"{rec['bias_pct']:.2f}%" if rec.get('bias_pct') is not None else "—"
                 te = f"{rec['te']:.2f}%" if rec.get('te') is not None else "—"
@@ -231,10 +234,13 @@ class ReportInquiryPage(BasePage):
                 r = self.table_quant.rowCount()
                 self.table_quant.insertRow(r)
                 
-                tm = f"{rec['tm']:.4f}" if rec.get('tm') is not None else "—"
-                mean = f"{rec['mean']:.4f}"
-                tsd = f"{rec['tsd']:.4f}" if rec.get('tsd') is not None else "—"
-                sd = f"{rec['sd']:.4f}"
+                # Dynamic precision
+                dec = 3 if param == "SG" else (1 if param in ("RBC", "WBC") else 2)
+                
+                tm = f"{rec['tm']:.{dec}f}" if rec.get('tm') is not None else "—"
+                mean = f"{rec['mean']:.{dec}f}"
+                tsd = f"{rec['tsd']:.{dec}f}" if rec.get('tsd') is not None else "—"
+                sd = f"{rec['sd']:.{dec}f}"
                 cv = f"{rec['cv']:.2f}%"
                 bias = f"{rec['bias_pct']:.2f}%" if rec.get('bias_pct') is not None else "—"
                 te = f"{rec['te']:.2f}%" if rec.get('te') is not None else "—"

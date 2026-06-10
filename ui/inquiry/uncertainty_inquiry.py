@@ -119,10 +119,13 @@ class UncertaintyInquiryPage(QWidget):
             lvl = rec["level_name"]
             lot = rec["lot_number"]
             n = str(rec["n"])
-            mean = f"{rec['mean']:.4f}"
+            rname = rec["reagent_name"]
+            dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
+            
+            mean = f"{rec['mean']:.{dec}f}"
             cv = f"{rec['cv']:.2f}"
             
-            tm = f"{rec['tm']:.4f}" if rec["tm"] is not None else "未設定"
+            tm = f"{rec['tm']:.{dec}f}" if rec["tm"] is not None else "未設定"
             bias = f"{rec['bias_pct']:.2f}" if rec["bias_pct"] is not None else "—"
             tea = f"{rec['tea']:.2f}" if rec["tea"] is not None else "未設定"
             

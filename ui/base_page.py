@@ -84,8 +84,8 @@ PAGE_STYLE = f"""
         border-radius: 8px;
         color: {COLORS['text_primary']};
         font-size: 13px;
-        padding: 8px 12px;
-        min-height: 32px;
+        padding: 5px 12px;
+        min-height: 26px;
         selection-background-color: {COLORS['accent_light']};
     }}
     QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QDateTimeEdit:focus,
@@ -95,7 +95,7 @@ PAGE_STYLE = f"""
 
     QComboBox::drop-down, QDateEdit::drop-down, QDateTimeEdit::drop-down {{
         border: none;
-        width: 32px;
+        width: 26px;
         background: {COLORS['bg_base']};
         border-left: 1px solid {COLORS['border']};
         border-top-right-radius: 8px;
@@ -108,7 +108,7 @@ PAGE_STYLE = f"""
         border-radius: 8px;
     }}
     QComboBox QAbstractItemView::item {{
-        min-height: 36px;
+        min-height: 28px;
         padding-left: 10px;
         color: {COLORS['text_primary']};
     }}
@@ -130,10 +130,10 @@ PAGE_STYLE = f"""
         color: {COLORS['text_secondary']};
         border: 1px solid {COLORS['border']};
         border-radius: 8px;
-        padding: 8px 18px;
+        padding: 5px 18px;
         font-size: 13px;
         font-weight: 500;
-        min-height: 34px;
+        min-height: 28px;
     }}
     QPushButton:hover {{
         background: {COLORS['accent_light']};

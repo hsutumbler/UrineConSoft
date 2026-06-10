@@ -1,0 +1,230 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+QC
+</name>
+</assembly>
+<members>
+<member name="F:MEDICARE.ChartSignForm._DailyKey">
+	<summary>
+ 紀錄要處裡的資料索引
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartSignForm.SetKeyData(System.Collections.Specialized.StringDictionary@)">
+	<summary>
+ 設定需要驗證的資料
+ </summary>
+	<param name="_key1"></param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartSignForm.phraseEven(System.String)">
+	<summary>
+ 輸入片語資料
+ </summary>
+	<param name="_value"></param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartSignForm.SignOK">
+	<summary>
+ 寫入核可資料
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.RvFm.S_PassRatio(System.String,System.String,System.String)">
+	<summary>
+ QC合格率計算
+ </summary>
+	<param name="machID">儀器代號</param>
+	<param name="sDate">起始日期 ex:2016/07/01</param>
+	<param name="eDate">結束日期 ex:2016/07/31</param>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartBigView.GetGradeName(System.String,System.String)">
+	<summary>
+ 取得簽核的人員姓名
+ </summary>
+	<param name="_key"></param>
+	<param name="_type"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartBigView.GetGradeNote(System.String,System.String)">
+	<summary>
+ 取得簽核說明
+ </summary>
+	<param name="_key"></param>
+	<param name="_type"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.ExplainBasicForm.DailyData">
+	<summary>
+ 要處裡的Daily資料結構
+ </summary>
+</member><member name="T:MEDICARE.ExplainBasicForm.ExplainStr">
+	<summary>
+ 異常選單結構
+ </summary>
+</member><member name="F:MEDICARE.ChartForm.QC_ToolTip_SHOW">
+	<summary>
+ QC_ToolTip
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.ChartForm.Button1_Click(System.Object,System.EventArgs)">
+	<summary>
+ 顯示簽核系統
+ </summary>
+	<param name="sender"></param>
+	<param name="e"></param>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.QC_ToolTip._TimerDESC">
+	<summary>
+ 定時檢查人數物件
+ </summary>
+	<remarks></remarks>
+</member><member name="E:MEDICARE.QC_ToolTip._Even_CheckWait">
+	<summary>
+ 執行等候人數檢查事件
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.QC_ToolTip._P3Labelbutton">
+	<summary>
+ 避免 叫下一號、重新叫號、保留 同時使用
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.QC_ToolTip.WaitCheck">
+	<summary>
+ 顯示等待人數
+ </summary>
+	<remarks></remarks>
+</member><member name="M:MEDICARE.DailyForm.GetGradeName(System.String,System.String)">
+	<summary>
+ 取得簽核的人員姓名
+ </summary>
+	<param name="_key"></param>
+	<param name="_type"></param>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.DailyForm._DailyTable">
+	<summary>
+ 暫存dailyQC下載的資料
+ </summary>
+	<remarks></remarks>
+</member><member name="F:MEDICARE.QCMDI.S_RANGE_STR">
+	<summary>
+ 單位
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.QCMDI.QCinfStructure">
+	<summary>
+ 紀錄QC執行期間的共用參數
+ </summary>
+</member><member name="F:MEDICARE.UcChartS_價數._DailyQCKeyList">
+	<summary>
+ 紀錄查詢範圍內的所有dailyQCkey
+ </summary>
+	<remarks></remarks>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatTitleDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDetailDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.ErrStatDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDailyDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCChartViewDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.passRatioDataTable">
+	<summary>
+Represents the strongly named DataTable class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatTitleRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDetailRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.ErrStatRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDailyRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCChartViewRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.passRatioRow">
+	<summary>
+Represents strongly named DataRow class.
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatTitleRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDetailRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.ErrStatRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCStatDailyRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.QCChartViewRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet.passRatioRowChangeEvent">
+	<summary>
+Row event argument class
+</summary>
+</member><member name="T:MEDICARE.MelinkDataSet">
+	<summary>
+Represents a strongly typed in-memory cache of data.
+</summary>
+</member><member name="F:MEDICARE.UCChartS._DailyQCKeyList">
+	<summary>
+ 紀錄查詢範圍內的所有dailyQCkey
+ </summary>
+	<remarks></remarks>
+</member><member name="P:MEDICARE.My.Resources.Resources.ResourceManager">
+	<summary>
+  傳回這個類別使用的快取的 ResourceManager 執行個體。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.Culture">
+	<summary>
+  覆寫目前執行緒的 CurrentUICulture 屬性，對象是所有
+  使用這個強類型資源類別的資源查閱。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.BackupBlue">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.Icon1">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="P:MEDICARE.My.Resources.Resources.meLinkLog">
+	<summary>
+  查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+</summary>
+</member><member name="T:MEDICARE.My.Resources.Resources">
+	<summary>
+  用於查詢當地語系化字串等的強類型資源類別。
+</summary>
+</member>
+</members>
+</doc>
