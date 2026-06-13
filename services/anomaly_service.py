@@ -7,38 +7,37 @@ class AnomalyService:
     
     @staticmethod
     def get_phrases(category: str):
+        # 舊系統的 Phrase 沒有分類 (category)，我們全部回傳
         with DBContext() as (conn, cursor):
             cursor.execute(
-                "SELECT template_id, phrase_text FROM phrase_templates WHERE category = %s ORDER BY template_id DESC",
-                (category,)
+                "SELECT preId AS template_id, txt AS phrase_text FROM Phrase ORDER BY preId DESC"
             )
             return [{"id": row['template_id'], "text": row['phrase_text']} for row in cursor.fetchall()]
 
     @staticmethod
     def add_phrase(category: str, phrase_text: str, created_by: int):
         with DBContext() as (conn, cursor):
-            # 檢查是否已存在
             cursor.execute(
-                "SELECT template_id FROM phrase_templates WHERE category = %s AND phrase_text = %s",
-                (category, phrase_text)
+                "SELECT preId FROM Phrase WHERE txt = %s",
+                (phrase_text,)
             )
             if cursor.fetchone():
                 return
             cursor.execute(
-                "INSERT INTO phrase_templates (category, phrase_text, created_by) VALUES (%s, %s, %s)",
-                (category, phrase_text, created_by)
+                "INSERT INTO Phrase (txt) VALUES (%s)",
+                (phrase_text,)
             )
 
     @staticmethod
     def delete_phrase(template_id: int):
         with DBContext() as (conn, cursor):
-            cursor.execute("DELETE FROM phrase_templates WHERE template_id = %s", (template_id,))
+            cursor.execute("DELETE FROM Phrase WHERE preId = %s", (template_id,))
 
     @staticmethod
     def update_phrase(template_id: int, phrase_text: str):
         with DBContext() as (conn, cursor):
             cursor.execute(
-                "UPDATE phrase_templates SET phrase_text = %s WHERE template_id = %s",
+                "UPDATE Phrase SET txt = %s WHERE preId = %s",
                 (phrase_text, template_id)
             )
 
@@ -46,7 +45,12 @@ class AnomalyService:
     def get_record_by_result_id(result_id: int):
         with DBContext() as (conn, cursor):
             cursor.execute(
-                "SELECT * FROM qc_anomaly_records WHERE result_id = %s",
+                "SELECT aberrantNO AS serial_number, aberrantNO AS record_id, dqcId AS result_id, "
+                "Cause AS anomaly_cause, UserFunction AS corrective_action, "
+                "FunctionResult AS corrective_result, Precaution AS preventive_action, "
+                "inote1 AS check_items, IncidentTime AS occurrence_time, "
+                "mhName AS instrument_name, lot AS qc_lot_number, Err_Lab AS violated_rule "
+                "FROM QCaberrant WHERE dqcId = %s",
                 (result_id,)
             )
             return cursor.fetchone()
@@ -54,72 +58,74 @@ class AnomalyService:
     @staticmethod
     def save_record(data: dict):
         with DBContext() as (conn, cursor):
-            # 檢查是否已經有這個 result_id 的紀錄
-            cursor.execute("SELECT record_id FROM qc_anomaly_records WHERE result_id = %s", (data["result_id"],))
+            cursor.execute("SELECT aberrantNO FROM QCaberrant WHERE dqcId = %s", (data["result_id"],))
             existing = cursor.fetchone()
+            
+            from datetime import datetime
+            now = datetime.now()
+            ym = now.strftime("%Y%m")
             
             if existing:
                 cursor.execute("""
-                    UPDATE qc_anomaly_records 
-                    SET anomaly_cause = %s, corrective_action = %s, corrective_result = %s, preventive_action = %s, check_items = %s
-                    WHERE record_id = %s
+                    UPDATE QCaberrant 
+                    SET Cause = %s, UserFunction = %s, FunctionResult = %s, Precaution = %s, inote1 = %s
+                    WHERE dqcId = %s
                 """, (
                     data.get("anomaly_cause", ""),
                     data.get("corrective_action", ""),
                     data.get("corrective_result", ""),
                     data.get("preventive_action", ""),
                     data.get("check_items", ""),
-                    existing['record_id']
+                    data["result_id"]
                 ))
             else:
-                from datetime import datetime
-                now = datetime.now()
-                ym = now.strftime("%Y%m")
-                cursor.execute("SELECT COUNT(*) as c FROM qc_anomaly_records WHERE serial_number LIKE %s", (f"CE{ym}%",))
+                cursor.execute("SELECT COUNT(*) as c FROM QCaberrant WHERE aberrantNO LIKE %s", (f"CE{ym}%",))
                 c_row = cursor.fetchone()
                 c = c_row['c'] if c_row else 0
                 sn = f"CE{ym}{c+1:03d}"
                 
                 cursor.execute("""
-                    INSERT INTO qc_anomaly_records (
-                        result_id, anomaly_data, occurrence_time, instrument_name,
-                        qc_lot_number, qc_level, violated_rule, 
-                        anomaly_cause, corrective_action, corrective_result, preventive_action,
-                        check_items, created_by, serial_number
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO QCaberrant (
+                        aberrantNO, dqcId, UserName, mhName, WriteDate, IncidentTime,
+                        lot, Err_Lab, Cause, UserFunction, FunctionResult, Precaution, inote1
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
-                    data["result_id"], data.get("anomaly_data", ""), data.get("occurrence_time", ""),
-                    data.get("instrument_name", ""), data.get("qc_lot_number", ""), data.get("qc_level", ""),
+                    sn, data["result_id"], "Admin", data.get("instrument_name", ""),
+                    now, data.get("occurrence_time", now), data.get("qc_lot_number", ""),
                     data.get("violated_rule", ""), data.get("anomaly_cause", ""),
                     data.get("corrective_action", ""), data.get("corrective_result", ""),
-                    data.get("preventive_action", ""), data.get("check_items", ""), data["created_by"], sn
+                    data.get("preventive_action", ""), data.get("check_items", "")
                 ))
 
     @staticmethod
     def get_all_records(start_date, end_date, instrument_id=None):
         with DBContext() as (conn, cursor):
             query = """
-                SELECT a.*, u.name as creator_name, r.result_date, r.qualitative_result, r.measured_value, iqi.reagent_id, rg.reagent_name
-                FROM qc_anomaly_records a
-                LEFT JOIN users u ON a.created_by = u.user_id
-                LEFT JOIN qc_results r ON a.result_id = r.result_id
-                LEFT JOIN instrument_qc_items iqi ON r.iqi_id = iqi.iqi_id
-                LEFT JOIN reagents rg ON iqi.reagent_id = rg.reagent_id
-                WHERE a.occurrence_time >= %s AND a.occurrence_time <= %s
+                SELECT a.aberrantNO AS record_id, a.aberrantNO AS serial_number, a.dqcId AS result_id, 
+                a.IncidentTime AS occurrence_time, a.mhName AS instrument_name, a.lot AS qc_lot_number,
+                a.Err_Lab AS violated_rule, a.Cause AS anomaly_cause, a.UserName AS creator_name,
+                r.iDate AS result_date, r.Check_Type AS qualitative_result, r.iValue AS measured_value,
+                r.mtId AS reagent_id, rg.mhitem AS reagent_name, l.lot_Level AS qc_level
+                FROM QCaberrant a
+                LEFT JOIN DailyQC r ON a.dqcId = r.dqcId
+                LEFT JOIN MhItem rg ON r.mtId = rg.mtId
+                LEFT JOIN LotTable l ON r.lot = l.lot_id
+                WHERE a.IncidentTime >= %s AND a.IncidentTime <= %s
             """
-            params = [start_date]
+            params = [f"{start_date} 00:00:00"]
             
             from datetime import datetime, timedelta
             if isinstance(end_date, str):
                 end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
             ed = (end_date + timedelta(days=1)).strftime("%Y-%m-%d")
-            params.append(ed)
+            params.append(f"{ed} 23:59:59")
             
             if instrument_id:
-                query += " AND iqi.instrument_id = %s"
-                params.append(instrument_id)
+                # 舊系統的 QCaberrant 沒有 MhId 或是 r.mhId 可能可以用
+                query += " AND (a.MhId = %s OR r.mhId = %s)"
+                params.extend([instrument_id, instrument_id])
                 
-            query += " ORDER BY a.occurrence_time DESC"
+            query += " ORDER BY a.IncidentTime DESC"
             
             cursor.execute(query, tuple(params))
             return cursor.fetchall()

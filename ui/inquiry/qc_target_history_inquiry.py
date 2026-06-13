@@ -53,6 +53,7 @@ class QCTargetHistoryDetailDialog(QDialog):
                 
             def fmt_semi(s_min, s_max):
                 if not s_min and not s_max: return "無紀錄"
+                if s_min == s_max: return str(s_min)
                 return f"{s_min} ~ {s_max}"
                 
             if is_semi:
@@ -65,15 +66,20 @@ class QCTargetHistoryDetailDialog(QDialog):
             if "無紀錄" in orig_val:
                 orig_val = "無 (首次建立)"
                 
-            table.setItem(row, 0, QTableWidgetItem(item["reagent_name"]))
-            table.setItem(row, 1, QTableWidgetItem(item["level_name"]))
+            item_name = QTableWidgetItem(item["reagent_name"])
+            item_name.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            table.setItem(row, 0, item_name)
+            
+            item_level = QTableWidgetItem(item["level_name"])
+            item_level.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            table.setItem(row, 1, item_level)
             
             orig_item = QTableWidgetItem(orig_val)
-            orig_item.setForeground(Qt.GlobalColor.darkGray)
+            orig_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             table.setItem(row, 2, orig_item)
             
             new_item = QTableWidgetItem(new_val)
-            new_item.setForeground(Qt.GlobalColor.darkBlue)
+            new_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             table.setItem(row, 3, new_item)
             
         header = table.horizontalHeader()
@@ -85,8 +91,8 @@ class QCTargetHistoryDetailDialog(QDialog):
         btn_close.setStyleSheet("padding: 5px 15px;")
         
         btn_print = QPushButton("🖨️ 列印")
+        btn_print.setObjectName("btn_primary")
         btn_print.clicked.connect(self._print_form)
-        btn_print.setStyleSheet("padding: 5px 15px;")
         
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
@@ -109,8 +115,8 @@ class QCTargetHistoryDetailDialog(QDialog):
             <tr>
                 <td style='border: 1px solid #000; padding: 6px; text-align: center;'>{param}</td>
                 <td style='border: 1px solid #000; padding: 6px; text-align: center;'>{lvl}</td>
-                <td style='border: 1px solid #000; padding: 6px; text-align: left; color: #666;'>{old_val}</td>
-                <td style='border: 1px solid #000; padding: 6px; text-align: left; color: #00008B;'>{new_val}</td>
+                <td style='border: 1px solid #000; padding: 6px; text-align: center;'>{old_val}</td>
+                <td style='border: 1px solid #000; padding: 6px; text-align: center;'>{new_val}</td>
             </tr>
             """
             

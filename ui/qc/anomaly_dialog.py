@@ -42,7 +42,13 @@ class AnomalyRecordDialog(QDialog):
         
         r = self.result_data
         val = r.get("measured_value")
-        if val is None: val = r.get("qualitative_result", "無")
+        if val is not None:
+            try:
+                val = round(float(val), 3)
+            except ValueError:
+                pass
+        else:
+            val = r.get("qualitative_result", "無")
         
         dt_str = ""
         if r.get("result_date"):
@@ -164,19 +170,19 @@ class AnomalyRecordDialog(QDialog):
         btn_cancel.clicked.connect(self.reject)
         
         btn_layout.addStretch()
-        btn_layout.addWidget(btn_cancel)
         if not is_readonly:
+            btn_save = QPushButton("儲存紀錄")
+            btn_save.setObjectName("btn_primary")
+            btn_save.clicked.connect(self._save_record)
             btn_layout.addWidget(btn_save)
+            btn_layout.addWidget(btn_cancel)
         else:
-            btn_print = QPushButton("🖨️ 列印紀錄")
-            btn_print.clicked.connect(self._print_record)
-            
-            btn_export = QPushButton("💾 匯出 PDF")
-            btn_export.setObjectName("btn_primary")
-            btn_export.clicked.connect(self._export_pdf)
+            btn_print = QPushButton("🖨️ 列印")
+            btn_print.setObjectName("btn_primary")
+            btn_print.clicked.connect(self._export_pdf)
             
             btn_layout.addWidget(btn_print)
-            btn_layout.addWidget(btn_export)
+            btn_layout.addWidget(btn_cancel)
         
         main_layout.addSpacing(10)
         main_layout.addWidget(self._make_divider())
@@ -341,7 +347,7 @@ class AnomalyRecordDialog(QDialog):
         html = f"""
         <div style="font-family: sans-serif; color: #000;">
             <h1 style="font-size: 16pt; text-align: center; margin-top: 0; margin-bottom: 5px; font-weight: bold;">品管異常紀錄單</h1>
-            <p style="font-size: 10pt; text-align: right; margin-top: 0; margin-bottom: 10px;">文件編號：___________________</p>
+            <p style="font-size: 10pt; text-align: right; margin-top: 0; margin-bottom: 10px;">文件編號：LL-Q010/01-D</p>
             
             <table width="100%" cellpadding="8" cellspacing="0" style="font-size: 11pt; border: 2px solid #000; border-collapse: collapse;">
                 <!-- Basic Info -->

@@ -1,7 +1,10 @@
 from database.connection import DBContext
+
 with DBContext() as (_, cur):
-    cur.execute("SELECT * FROM qc_batch_acceptance")
-    rows = cur.fetchall()
-    print("COUNT:", len(rows))
-    for r in rows:
-        print(r)
+    cur.execute("SELECT batch_id, lot_number FROM reagent_batches")
+    rb = cur.fetchall()
+    print("Reagent Batches:", rb)
+    
+    cur.execute("SELECT DISTINCT lot FROM DailyQC")
+    dqc_lots = cur.fetchall()
+    print("DailyQC Lots:", dqc_lots)

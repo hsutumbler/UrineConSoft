@@ -110,12 +110,12 @@ class QCDataEntryPage(BasePage):
 
         # 儲存按鈕
         btn_row = QHBoxLayout()
-        btn_save = QPushButton("💾 儲存品管結果")
-        btn_save.setObjectName("btn_primary")
-        btn_save.setFixedHeight(42)
-        btn_save.clicked.connect(self._save_manual)
+        self.btn_save = QPushButton("💾 儲存")
+        self.btn_save.setObjectName("btn_primary")
+        self.btn_save.setFixedHeight(42)
+        self.btn_save.clicked.connect(self._save_manual)
         btn_row.addStretch()
-        btn_row.addWidget(btn_save)
+        btn_row.addWidget(self.btn_save)
         layout.addLayout(btn_row)
 
         self._manual_widgets: dict = {}  # iqi_id -> widget
@@ -158,8 +158,8 @@ class QCDataEntryPage(BasePage):
         batches = QCBatchService.get_all()
         groups = {}
         for b in batches:
-            # Group by open_date, expiry_date, created_at date to keep L1/L2 together
-            key = (b["open_date"], b["expiry_date"], b["created_at"].date() if b["created_at"] else None)
+            # Group by open_date, expiry_date, and status to prevent merging active and pending batches created on the same day
+            key = (b["open_date"], b["expiry_date"], b.get("is_active"), b.get("is_archived"))
             if key not in groups:
                 groups[key] = []
             groups[key].append(b)
@@ -234,6 +234,7 @@ class QCDataEntryPage(BasePage):
         
         self._row_param_types = {}
         self._row_decimals = {}
+        self._row_reagent_names = {}
         
         class InputDelegate(QStyledItemDelegate):
             def eventFilter(self, editor, event):
@@ -272,8 +273,12 @@ class QCDataEntryPage(BasePage):
                 if col in (1, 3):
                     ptype = self.parent()._row_param_types.get(row)
                     if ptype == 2:
+                        rname = self.parent()._row_reagent_names.get(row, "")
                         cb = QComboBox(parent)
-                        cb.addItems(SEMI_OPTIONS)
+                        if rname == "NIT":
+                            cb.addItems(["", "Neg", "Pos"])
+                        else:
+                            cb.addItems(["", "Neg", "1+", "2+", "3+", "4+"])
                         return cb
                     elif ptype == 3:
                         cb = QComboBox(parent)
@@ -304,18 +309,39 @@ class QCDataEntryPage(BasePage):
         self.t_input.setItemDelegate(InputDelegate(self))
         
         batches = self.cmb_qc_batch.currentData()
-        b1 = b2 = None
+        b_map_chem = {1: None, 2: None}
+        b_map_sed = {1: None, 2: None}
+        
         if batches:
-            b1 = next((b for b in batches if b["level_name"] == "Level 1"), None)
-            b2 = next((b for b in batches if b["level_name"] == "Level 2"), None)
+            for mother in batches:
+                is_sed_mother = mother.get("lot_number", "").upper().startswith("D")
+                for b in mother.get("sub_lots", []):
+                    lvl = 1 if b["level_name"] == "Level 1" else 2
+                    if is_sed_mother:
+                        b_map_sed[lvl] = b
+                    else:
+                        b_map_chem[lvl] = b
+                        
+        is_chem_lot = any(b.get("lot_number", "").upper().startswith("C") for b in batches) if batches else False
+        is_sed_lot = any(b.get("lot_number", "").upper().startswith("D") for b in batches) if batches else False
         
         row = 0
         for rid, rdata in reagents.items():
             rname = rdata["label"].split()[0]
+            is_sed_reagent = rname in ("RBC", "WBC")
+            if not is_chem_lot and not is_sed_reagent:
+                continue
+            if not is_sed_lot and is_sed_reagent:
+                continue
+                
+            b1 = b_map_sed[1] if is_sed_reagent else b_map_chem[1]
+            b2 = b_map_sed[2] if is_sed_reagent else b_map_chem[2]
+                
             rlabel = " ".join(rdata["label"].split()[1:])
             disp_name = rlabel if rname in rlabel else rdata["label"]
             
             self._row_param_types[row] = rdata["param_type"]
+            self._row_reagent_names[row] = rname
             
             if rname == "SG":
                 self._row_decimals[row] = 3
@@ -370,6 +396,31 @@ class QCDataEntryPage(BasePage):
             
             row += 1
             
+        batches = self.cmb_qc_batch.currentData()
+        has_targets = True
+        if batches:
+            from services.qc_service import TargetSettingService
+            for mother in batches:
+                if not mother.get("is_active"):
+                    for b in mother.get("sub_lots", []):
+                        ts = TargetSettingService.get_by_batch(b["batch_id"])
+                        if not ts:
+                            has_targets = False
+                            break
+                if not has_targets:
+                    break
+        
+        if not has_targets:
+            warn_lbl = QLabel("⚠️ 此品管液批號尚未設定「品管範圍」")
+            warn_lbl.setStyleSheet("color: #D32F2F; font-weight: bold; font-size: 14px; padding: 10px; background-color: #FFEBEE; border-radius: 4px; margin-bottom: 10px;")
+            self.table_container.addWidget(warn_lbl)
+            self.t_input.setEnabled(False)
+            if hasattr(self, 'btn_save'):
+                self.btn_save.setEnabled(False)
+        else:
+            if hasattr(self, 'btn_save'):
+                self.btn_save.setEnabled(True)
+
         self.table_container.addWidget(self.t_input)
         self.t_input.itemChanged.connect(self._on_item_changed)
 
@@ -436,8 +487,9 @@ class QCDataEntryPage(BasePage):
         
         is_valid = True
         if range_str != "未設定":
-            if " ~ " in range_str:
-                parts = range_str.split(" ~ ")
+            sep = " ~ " if " ~ " in range_str else "-" if "-" in range_str else None
+            if sep:
+                parts = range_str.split(sep)
                 if len(parts) == 2:
                     try:
                         val = float(val_str)
@@ -461,14 +513,19 @@ class QCDataEntryPage(BasePage):
             return
 
         rb = ReagentBatchService.get_active()
-        selected_qc_group = self.cmb_qc_batch.currentData()
-        l1_batch = l2_batch = None
-        if selected_qc_group:
-            for b in selected_qc_group:
-                if b["level_name"] == "Level 1":
-                    l1_batch = b
-                elif b["level_name"] == "Level 2":
-                    l2_batch = b
+        batches = self.cmb_qc_batch.currentData()
+        b_map_chem = {1: None, 2: None}
+        b_map_sed = {1: None, 2: None}
+        
+        if batches:
+            for mother in batches:
+                is_sed_mother = mother.get("lot_number", "").upper().startswith("D")
+                for b in mother.get("sub_lots", []):
+                    lvl = 1 if b["level_name"] == "Level 1" else 2
+                    if is_sed_mother:
+                        b_map_sed[lvl] = b
+                    else:
+                        b_map_chem[lvl] = b
 
         user_id = self.user["user_id"]
         
@@ -510,10 +567,15 @@ class QCDataEntryPage(BasePage):
                     continue
 
             qc_batch_id = None
-            if iqi_id % 2 == 1 and l1_batch:
-                qc_batch_id = l1_batch["batch_id"]
-            elif iqi_id % 2 == 0 and l2_batch:
-                qc_batch_id = l2_batch["batch_id"]
+            try:
+                level_id = int(str(iqi_id).split('_')[1])
+                rname = self._row_reagent_names.get(row, "")
+                is_sed_reagent = rname in ("RBC", "WBC")
+                b_map = b_map_sed if is_sed_reagent else b_map_chem
+                if level_id in b_map and b_map[level_id]:
+                    qc_batch_id = b_map[level_id]["batch_id"]
+            except IndexError:
+                pass
 
             is_accepted, w_flag = QCResultService._check_westgard(
                 iqi_id, q_date.date(), mval, qual, qc_batch_id
@@ -548,6 +610,7 @@ class QCDataEntryPage(BasePage):
 
         # Proceed to save
         saved = 0
+        inst_id = self.cmb_inst.currentData()
         for entry in entries_to_save:
             QCResultService.save_result(
                 iqi_id=entry["iqi_id"],
@@ -559,6 +622,7 @@ class QCDataEntryPage(BasePage):
                 notes=None,
                 entered_by=self.user["user_id"],
                 source=1,
+                instrument_id=inst_id
             )
             saved += 1
 
@@ -750,6 +814,7 @@ class QCDataEntryPage(BasePage):
             pass
 
     def on_page_show(self):
+        self._load_reagent_batches()
         self._load_qc_batches()
         inst_id = self.cmb_inst.currentData()
         if inst_id:

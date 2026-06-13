@@ -6,24 +6,12 @@ from database.connection import test_connection
 from ui.login_window import LoginWindow
 from ui.main_window import MainWindow
 
-def check_and_update_db():
-    from database.connection import DBContext
-    try:
-        with DBContext() as (_, cur):
-            cur.execute("SHOW COLUMNS FROM qc_target_settings LIKE 'semi_target_min'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE qc_target_settings ADD COLUMN semi_target_min VARCHAR(20) COMMENT '半定量範圍下限'")
-                cur.execute("ALTER TABLE qc_target_settings ADD COLUMN semi_target_max VARCHAR(20) COMMENT '半定量範圍上限'")
-    except Exception as e:
-        print(f"DB Update Error: {e}")
-
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
     # 初始化資料庫連線測試
     test_connection()
-    check_and_update_db()
     
     # login_win = LoginWindow()
     # 

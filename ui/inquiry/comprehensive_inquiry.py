@@ -31,35 +31,18 @@ class ComprehensiveInquiryPage(BasePage):
         grid_container.setObjectName("grid_bg")
         grid_container.setStyleSheet("""
             QFrame#grid_bg {
-                background-color: #E6E4DD;
-                border: 1px solid #A0A0A0;
-                padding: 6px;
+                background-color: #FDFBEC;
+                border: 1px solid #E0D9C0;
+                border-radius: 8px;
+                padding: 10px;
                 margin-bottom: 10px;
             }
             QLabel[class="grid_label"] {
-                background-color: #008B8B;
-                color: white;
+                background-color: transparent;
+                color: #6B6444;
+                font-weight: bold;
+                font-size: 13px;
                 padding: 4px 10px;
-                font-size: 13px;
-                border: 1px solid #808080;
-            }
-            QComboBox, QDateEdit {
-                background-color: #FFFFFF;
-                color: black;
-                border: 1px solid #808080;
-                border-radius: 0px;
-                padding: 3px 6px;
-                min-height: 24px;
-                font-size: 13px;
-            }
-            QComboBox {
-                min-width: 150px;
-            }
-            QComboBox::drop-down, QDateEdit::drop-down {
-                border-left: 1px solid #808080;
-                background: #E0E0E0;
-                width: 20px;
-                border-radius: 0px;
             }
             QWidget#grid_inner {
                 background-color: transparent;
@@ -68,26 +51,24 @@ class ComprehensiveInquiryPage(BasePage):
                 background-color: transparent;
                 border: none;
             }
-            QPushButton[class="grid_btn"] {
-                background-color: #F0F0F0;
-                border: 1px solid #808080;
-                border-radius: 2px;
-                padding: 5px 15px;
-                min-height: 26px;
-                color: black;
-            }
             QPushButton[class="grid_btn_primary"] {
-                background-color: #F0F0F0;
-                border: 1px solid #808080;
-                border-radius: 2px;
+                background-color: #FFFFFF;
+                border: 1.5px solid #E0D9C0;
+                border-radius: 8px;
                 font-size: 14px;
-                color: black;
+                color: #6B6444;
                 font-weight: bold;
-                min-width: 60px;
+                min-width: 75px;
                 min-height: 56px;
             }
-            QPushButton:hover { background-color: #FFFFFF; }
-            QPushButton:pressed { background-color: #D0D0D0; }
+            QPushButton[class="grid_btn_primary"]:hover { 
+                background-color: #FFF8D6; 
+                border-color: #9B7E23;
+                color: #9B7E23;
+            }
+            QPushButton[class="grid_btn_primary"]:pressed { 
+                background-color: #F0E8C0; 
+            }
         """)
 
         main_hbox = QHBoxLayout(grid_container)
@@ -159,29 +140,33 @@ class ComprehensiveInquiryPage(BasePage):
         
         main_hbox.addWidget(left_grid_widget)
         
-        # Query Button
-        btn_query = QPushButton("查  詢")
-        btn_query.setProperty("class", "grid_btn_primary")
-        btn_query.clicked.connect(self._do_query)
-        main_hbox.addWidget(btn_query)
-        
         # Right Buttons
-        right_vbox = QVBoxLayout()
-        right_vbox.setSpacing(4)
-        right_vbox.setContentsMargins(0, 0, 0, 0)
+        right_hbox = QHBoxLayout()
+        right_hbox.setSpacing(4)
+        right_hbox.setContentsMargins(0, 0, 0, 0)
         
-        self.btn_view = QPushButton("檢  視")
-        self.btn_view.setProperty("class", "grid_btn")
+        self.btn_query = QPushButton("🔍 查 詢")
+        self.btn_query.setProperty("class", "grid_btn_primary")
+        self.btn_query.clicked.connect(self._do_query)
+        
+        self.btn_view = QPushButton("👁️ 檢 視")
+        self.btn_view.setProperty("class", "grid_btn_primary")
         self.btn_view.clicked.connect(self._do_view)
         
-        self.btn_print = QPushButton("列印 / 匯出 PDF")
-        self.btn_print.setProperty("class", "grid_btn")
+        self.btn_print = QPushButton("🖨️ 列 印")
+        self.btn_print.setProperty("class", "grid_btn_primary")
         self.btn_print.clicked.connect(self._do_print)
         
-        right_vbox.addWidget(self.btn_view)
-        right_vbox.addWidget(self.btn_print)
+        self.btn_export_csv = QPushButton("📊 匯出 CSV")
+        self.btn_export_csv.setProperty("class", "grid_btn_primary")
+        self.btn_export_csv.clicked.connect(self._do_export_csv)
         
-        main_hbox.addLayout(right_vbox)
+        right_hbox.addWidget(self.btn_query)
+        right_hbox.addWidget(self.btn_view)
+        right_hbox.addWidget(self.btn_print)
+        right_hbox.addWidget(self.btn_export_csv)
+        
+        main_hbox.addLayout(right_hbox)
         main_hbox.addStretch()
         
         self.content_layout.addWidget(grid_container)
@@ -235,7 +220,8 @@ class ComprehensiveInquiryPage(BasePage):
         self.cmb_lot.clear()
         self.cmb_lot.addItem("全部")
         
-        if idx == 0 or idx == 3:  # Raw QC & QC Report
+        if idx == 0:  # Raw QC
+            self.btn_export_csv.setVisible(True)
             self.lbl_dynamic.setText("儀器名稱")
             self.lbl_dynamic.setVisible(True)
             self.cmb_dynamic.setVisible(True)
@@ -243,6 +229,7 @@ class ComprehensiveInquiryPage(BasePage):
             self.lbl_lot.setVisible(True)
             self.cmb_lot.setVisible(True)
             self.btn_view.setVisible(False)
+            self.btn_print.setVisible(True)
             
             self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
             self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
@@ -252,6 +239,24 @@ class ComprehensiveInquiryPage(BasePage):
             for inst in self.instruments:
                 self.cmb_dynamic.addItem(inst["instrument_name"], inst)
                 
+        elif idx == 3:  # QC Report
+            self.lbl_dynamic.setText("儀器名稱")
+            self.lbl_dynamic.setVisible(True)
+            self.cmb_dynamic.setVisible(True)
+            self.lbl_lot.setVisible(False)
+            self.cmb_lot.setVisible(False)
+            self.btn_view.setVisible(True)
+            self.btn_print.setVisible(False)
+            
+            self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
+            self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
+            
+            self.cmb_dynamic.addItem("全部儀器", None)
+            for inst in self.instruments:
+                self.cmb_dynamic.addItem(inst["instrument_name"], inst)
+                
+                
+            self.btn_export_csv.setVisible(False)
         elif idx == 1:  # Reagent Acceptance
             self.lbl_dynamic.setVisible(False)
             self.cmb_dynamic.setVisible(False)
@@ -259,18 +264,22 @@ class ComprehensiveInquiryPage(BasePage):
             self.lbl_lot.setVisible(True)
             self.cmb_lot.setVisible(True)
             self.btn_view.setVisible(True)
+            self.btn_print.setVisible(True)
             
             # Move lot to the left to fill space
             self.left_grid.addWidget(self.lbl_lot, 1, 0)
             self.left_grid.addWidget(self.cmb_lot, 1, 1)
                 
+            self.btn_export_csv.setVisible(False)
         elif idx == 2:  # QC Acceptance
             self.lbl_dynamic.setVisible(False)
             self.cmb_dynamic.setVisible(False)
             self.lbl_lot.setVisible(False)
             self.cmb_lot.setVisible(False)
             self.btn_view.setVisible(True)
+            self.btn_print.setVisible(True)
             
+            self.btn_export_csv.setVisible(False)
         elif idx == 4:  # Anomaly Records
             self.lbl_dynamic.setText("儀器名稱")
             self.lbl_dynamic.setVisible(True)
@@ -278,6 +287,7 @@ class ComprehensiveInquiryPage(BasePage):
             self.lbl_lot.setVisible(False)
             self.cmb_lot.setVisible(False)
             self.btn_view.setVisible(True)
+            self.btn_print.setVisible(True)
             self.cmb_dynamic.addItem("全部儀器", None)
             
             self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
@@ -286,6 +296,7 @@ class ComprehensiveInquiryPage(BasePage):
             for inst in self.instruments:
                 self.cmb_dynamic.addItem(inst["instrument_name"], inst)
                 
+            self.btn_export_csv.setVisible(False)
         elif idx == 5:  # QC Target History
             self.lbl_dynamic.setText("儀器名稱")
             self.lbl_dynamic.setVisible(True)
@@ -294,6 +305,7 @@ class ComprehensiveInquiryPage(BasePage):
             self.lbl_lot.setVisible(True)
             self.cmb_lot.setVisible(True)
             self.btn_view.setVisible(True)
+            self.btn_print.setVisible(True)
             
             self.left_grid.addWidget(self.lbl_dynamic, 1, 0)
             self.left_grid.addWidget(self.cmb_dynamic, 1, 1)
@@ -303,6 +315,8 @@ class ComprehensiveInquiryPage(BasePage):
             for inst in self.instruments:
                 self.cmb_dynamic.addItem(inst["instrument_name"], inst)
                 
+            self.btn_export_csv.setVisible(False)
+
         self.cmb_dynamic.blockSignals(False)
         self.cmb_lot.blockSignals(False)
         self._on_dynamic_changed()
@@ -313,7 +327,7 @@ class ComprehensiveInquiryPage(BasePage):
         self.cmb_lot.clear()
         self.cmb_lot.addItem("全部")
         
-        if idx in (0, 3, 5):  # Raw QC, QC Report, QC Target History
+        if idx in (0, 5):  # Raw QC, QC Target History
             inst = self.cmb_dynamic.currentData()
             if inst:
                 from services.qc_service import QCBatchService
@@ -327,13 +341,23 @@ class ComprehensiveInquiryPage(BasePage):
                     b_start = b["open_date"]
                     if not b_start:
                         b_start = b["created_at"].date() if b.get("created_at") else date.min
-                    b_end = b["expiry_date"] or date.max
+                    elif hasattr(b_start, 'date'):
+                        b_start = b_start.date()
+                        
+                    b_end = b["expiry_date"]
+                    if b_end and hasattr(b_end, 'date'):
+                        b_end = b_end.date()
+                    elif not b_end:
+                        b_end = date.max
                     
                     if b_start <= d_to and b_end >= d_from:
-                        lot_str = f"{b['lot_number']} ({b['level_name']})"
-                        if lot_str not in seen_lots:
-                            seen_lots.add(lot_str)
-                            self.cmb_lot.addItem(lot_str, b)
+                        for sub in b.get("sub_lots", []):
+                            lot_str = f"{b['lot_number']} ({sub['level_name']})"
+                            if lot_str not in seen_lots:
+                                seen_lots.add(lot_str)
+                                combined = dict(b)
+                                combined.update(sub)
+                                self.cmb_lot.addItem(lot_str, combined)
                     
         elif idx == 1:  # Reagent Acceptance
             from services.qc_service import ReagentBatchService
@@ -358,19 +382,23 @@ class ComprehensiveInquiryPage(BasePage):
         elif idx == 1:
             lot = self.cmb_lot.currentData()
             self.page_reagent.execute_query(d_from, d_to, None, lot)
+            self.btn_export_csv.setVisible(False)
         elif idx == 2:
             self.page_qc.execute_query(d_from, d_to)
+            self.btn_export_csv.setVisible(False)
         elif idx == 3:
             inst = self.cmb_dynamic.currentData()
-            lot = self.cmb_lot.currentData()
-            self.page_report.execute_query(d_from, d_to, inst, lot)
+            self.page_report.execute_query(d_from, d_to, inst, None)
+            self.btn_export_csv.setVisible(False)
         elif idx == 4:
             inst = self.cmb_dynamic.currentData()
             self.page_anomaly.execute_query(d_from, d_to, inst)
+            self.btn_export_csv.setVisible(False)
         elif idx == 5:
             inst = self.cmb_dynamic.currentData()
             lot = self.cmb_lot.currentData()
             self.page_target_history.execute_query(d_from, d_to, inst, lot)
+            self.btn_export_csv.setVisible(False)
 
     def _do_view(self):
         idx = self.cmb_type.currentIndex()
@@ -378,10 +406,21 @@ class ComprehensiveInquiryPage(BasePage):
             self.page_reagent._on_view_clicked()
         elif idx == 2:
             self.page_qc._on_view_clicked()
+            self.btn_export_csv.setVisible(False)
+        elif idx == 3:
+            self.page_report._on_view_clicked()
+            self.btn_export_csv.setVisible(False)
         elif idx == 4:
             self.page_anomaly._on_view_clicked()
+            self.btn_export_csv.setVisible(False)
         elif idx == 5:
             self.page_target_history._on_view_clicked()
+            self.btn_export_csv.setVisible(False)
+
+    def _do_export_csv(self):
+        idx = self.cmb_type.currentIndex()
+        if idx == 0:
+            self.page_raw_qc._export_csv()
 
     def _do_print(self):
         idx = self.cmb_type.currentIndex()
@@ -389,11 +428,15 @@ class ComprehensiveInquiryPage(BasePage):
             self.page_raw_qc._print_report()
         elif idx == 1:
             self.page_reagent._print_report()
+            self.btn_export_csv.setVisible(False)
         elif idx == 2:
             self.page_qc._print_report()
+            self.btn_export_csv.setVisible(False)
         elif idx == 3:
             self.page_report._print_report()
+            self.btn_export_csv.setVisible(False)
         elif idx == 4:
             self.page_anomaly._print_report()
+            self.btn_export_csv.setVisible(False)
         elif idx == 5:
             self.page_target_history._print_report()

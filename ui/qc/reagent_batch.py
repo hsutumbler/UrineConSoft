@@ -39,9 +39,15 @@ class ReagentBatchPage(BasePage):
         self.btn_activate.setEnabled(False)
         self.btn_activate.clicked.connect(self._activate_selected)
 
+        self.btn_delete = QPushButton("🗑️ 刪除批號")
+        self.btn_delete.setStyleSheet("color: #D32F2F;")
+        self.btn_delete.setEnabled(False)
+        self.btn_delete.clicked.connect(self._delete_batch)
+
         toolbar.addWidget(btn_add)
         toolbar.addWidget(self.btn_accept)
         toolbar.addWidget(self.btn_activate)
+        toolbar.addWidget(self.btn_delete)
         toolbar.addStretch()
         self.content_layout.addLayout(toolbar)
 
@@ -54,7 +60,7 @@ class ReagentBatchPage(BasePage):
 
         # 批號列表
         self.table = self.make_table(
-            ["批號", "效期", "開封日", "狀態", "建立時間", "建立人"]
+            ["批號", "穩定效期", "開封日", "狀態", "建立時間", "建立人"]
         )
         self.table.itemSelectionChanged.connect(self._on_selection)
         self.table.cellDoubleClicked.connect(lambda r, c: self._view_acceptance(r))
@@ -71,8 +77,8 @@ class ReagentBatchPage(BasePage):
         active = ReagentBatchService.get_active()
         if active:
             self.lbl_active.setText(
-                f"目前使用中批號：{active['lot_number']}  "
-                f"（效期：{active['expiry_date'] or '—'}）"
+                f"目前使用中批號：{active['lot_number']}   "
+                f"（穩定效期：{active['expiry_date'] or '—'}）"
             )
         else:
             self.lbl_active.setText("目前使用中批號：未設定")
@@ -118,6 +124,13 @@ class ReagentBatchPage(BasePage):
         has = row >= 0
         self.btn_activate.setEnabled(has)
         self.btn_accept.setEnabled(has)
+        
+        can_delete = False
+        if has:
+            b = self._get_selected()
+            if b and not b.get("is_active") and not b.get("is_archived"):
+                can_delete = True
+        self.btn_delete.setEnabled(can_delete)
 
     def _get_selected(self):
         row = self.table.currentRow()
@@ -136,10 +149,6 @@ class ReagentBatchPage(BasePage):
                 d["notes"], self.user["user_id"]
             )
             self._load()
-            # 詢問是否立即設為使用中
-            if self.confirm("設為使用中", "是否立即將此批號設為目前使用中？", default_yes=True):
-                ReagentBatchService.set_active(batch_id)
-                self._load()
 
     def _activate_selected(self):
         b = self._get_selected()
@@ -149,6 +158,13 @@ class ReagentBatchPage(BasePage):
             return
         ReagentBatchService.set_active(b["batch_id"])
         self._load()
+
+    def _delete_batch(self):
+        b = self._get_selected()
+        if not b: return
+        if self.confirm("警告", f"確定要刪除待允收批號 {b['lot_number']} 嗎？此操作無法還原。"):
+            ReagentBatchService.delete(b["batch_id"])
+            self._load()
 
     def _run_acceptance(self):
         b = self._get_selected()
@@ -196,7 +212,7 @@ class BatchDialog(QDialog):
         self.f_notes.setPlaceholderText("備註（選填）")
 
         form.addRow("批號 *",   self.f_lot)
-        form.addRow("效期",     self.f_exp)
+        form.addRow("穩定效期",     self.f_exp)
         form.addRow("開封日",   self.f_open)
         form.addRow("備註",     self.f_notes)
 
@@ -262,18 +278,26 @@ class AcceptanceDialog(QDialog):
         active_grp.setStyleSheet("font-weight: bold;")
         al = QVBoxLayout(active_grp)
         
-        active_lot_txt = self._snapshot_data.get("active_lot", "無") if self.read_only else (self.active_batch['lot_number'] if self.active_batch else '無')
+        active_lot_txt = (self._snapshot_data.get("active_batch") or self._snapshot_data.get("active_lot", "無")) if self.read_only else (self.active_batch['lot_number'] if self.active_batch else '無')
         al.addWidget(QLabel(f"批號: {active_lot_txt}"))
         
         ctrl_layout.addWidget(active_grp)
         
         self.cmb_active = QComboBox()
-        for t in self.active_times:
-            self.cmb_active.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
-        if not self.active_times:
+        if self.read_only:
+            t_str = self._snapshot_data.get("active_time")
+            if t_str:
+                self.cmb_active.addItem(t_str.replace("T", " ")[:16], t_str)
+        else:
+            for t in self.active_times:
+                self.cmb_active.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
+                
+        if self.cmb_active.count() == 0:
             self.cmb_active.addItem("無品管數據", None)
             self.cmb_active.setEnabled(False)
         else:
+            if not self.read_only and self.cmb_active.count() > 1:
+                self.cmb_active.setCurrentIndex(1)
             self.cmb_active.currentIndexChanged.connect(self._update_table)
         
         time_row1 = QHBoxLayout()
@@ -288,9 +312,15 @@ class AcceptanceDialog(QDialog):
         nl.addWidget(QLabel(f"批號: {self.batch['lot_number']}"))
         
         self.cmb_new = QComboBox()
-        for t in self.new_times:
-            self.cmb_new.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
-        if not self.new_times:
+        if self.read_only:
+            t_str = self._snapshot_data.get("new_time")
+            if t_str:
+                self.cmb_new.addItem(t_str.replace("T", " ")[:16], t_str)
+        else:
+            for t in self.new_times:
+                self.cmb_new.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
+                
+        if self.cmb_new.count() == 0:
             self.cmb_new.addItem("無品管數據", None)
             self.cmb_new.setEnabled(False)
         else:
@@ -384,14 +414,15 @@ class AcceptanceDialog(QDialog):
         
         # Bottom controls
         btn_layout = QHBoxLayout()
-        btn_print = QPushButton("🖨️ 列印 / 匯出 PDF")
+        btn_print = QPushButton("🖨️ 列印")
         btn_print.clicked.connect(self._print_pdf)
         
         if self.read_only:
+            btn_print.setObjectName("btn_primary")
             btn_close = QPushButton("關閉")
             btn_close.clicked.connect(self.accept)
-            btn_layout.addWidget(btn_print)
             btn_layout.addStretch()
+            btn_layout.addWidget(btn_print)
             btn_layout.addWidget(btn_close)
         else:
             btn_accept = QPushButton("允收")
@@ -676,7 +707,6 @@ class AcceptanceDialog(QDialog):
         box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         box.setDefaultButton(QMessageBox.StandardButton.Yes if default_yes else QMessageBox.StandardButton.No)
         return box.exec() == QMessageBox.StandardButton.Yes
-
     def _print_pdf(self):
         from PyQt6.QtPrintSupport import QPrinter
         from PyQt6.QtGui import QTextDocument, QPageSize, QPageLayout
@@ -689,24 +719,36 @@ class AcceptanceDialog(QDialog):
         
         # 處理舊批號與新批號
         if self.read_only:
-            old_lot = self._snapshot_data.get("active_batch", "無")
-            old_exp = "— (歷史資料)"
+            old_lot = self._snapshot_data.get("active_batch") or self._snapshot_data.get("active_lot", "無")
+            old_exp = "—"
+            from database.connection import DBContext
+            with DBContext() as (_, cur):
+                cur.execute("SELECT expiry_date FROM reagent_batches WHERE lot_number=%s", (old_lot,))
+                r = cur.fetchone()
+                if r and r["expiry_date"]:
+                    old_exp = r["expiry_date"].strftime("%Y-%m-%d")
         else:
             old_lot = self.active_batch['lot_number'] if self.active_batch else "無"
-            old_exp = self.active_batch['expiry_date'].strftime("%Y/%m/%d") if self.active_batch and self.active_batch['expiry_date'] else "—"
+            old_exp = self.active_batch['expiry_date'].strftime("%Y-%m-%d") if self.active_batch and self.active_batch['expiry_date'] else "—"
             
         new_lot = self.batch['lot_number']
-        new_exp = self.batch['expiry_date'].strftime("%Y/%m/%d") if self.batch['expiry_date'] else "—"
+        new_exp = self.batch['expiry_date'].strftime("%Y-%m-%d") if self.batch['expiry_date'] else "—"
         acc_time = self.batch.get('accepted_at', '未允收')
         acc_by = self.batch.get('accepted_by_name', '未設定')
+        
+        old_time = self._snapshot_data.get("active_time")
+        old_time_str = old_time.replace("T", " ")[:16] if old_time else "無"
+        
+        new_time = self._snapshot_data.get("new_time")
+        new_time_str = new_time.replace("T", " ")[:16] if new_time else "無"
         
         html = f"""
         <html>
         <head>
             <style>
-                body {{ font-family: 'Arial', 'Microsoft JhengHei', sans-serif; padding: 0pt 20pt 20pt 20pt; color: #000; font-size: 12pt; }}
+                body {{ font-family: 'Arial', 'Microsoft JhengHei', sans-serif; padding: 0pt 20pt 10pt 20pt; color: #000; font-size: 12pt; }}
                 h1 {{ text-align: center; color: #2C3E50; margin-top: 5pt; font-size: 16pt; margin-bottom: 5pt; }}
-                .info-box {{ font-size: 12pt; line-height: 1.2; margin-bottom: 24pt; }}
+                .meta {{ font-size: 12pt; line-height: 1.2; margin-bottom: 10pt; }}
                 table {{ width: 100%; border-collapse: collapse; margin-top: 5pt; font-size: 12pt; border: 1px solid black; }}
                 th, td {{ border: 1px solid black; text-align: center; }}
                 th {{ font-weight: normal; color: #000; }}
@@ -714,17 +756,16 @@ class AcceptanceDialog(QDialog):
             </style>
         </head>
         <body>
-            <h1>試劑允收報告</h1>
+            <h1>試劑允收紀錄</h1>
             <br/>
             
-            <div class="info-box">
-                舊批號：<b>{old_lot}</b> &nbsp;&nbsp;(效期：{old_exp})<br/>
-                新批號：<b style="color:#2980B9;">{new_lot}</b> &nbsp;&nbsp;(效期：{new_exp})<br/>
+            <div class="meta">
+                舊批號：{old_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{old_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{old_time_str}<br/>
+                新批號：{new_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{new_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{new_time_str}<br/>
                 允收時間：{acc_time} &nbsp;&nbsp;&nbsp;&nbsp; 執行人員：{acc_by}
             </div>
-            <br/>
             
-            <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
+            <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
                 <thead>
                     <tr>
                         <th rowspan="2" style="vertical-align: middle;">項目</th>
@@ -757,8 +798,8 @@ class AcceptanceDialog(QDialog):
                 </tbody>
             </table>
             
-            <br/><br/>
-            <div style="margin-top: 30pt; font-size: 14pt;">
+            <br/>
+            <div style="font-size: 14pt;">
                 組長： &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 技術主任：
             </div>
         </body>

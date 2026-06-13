@@ -185,15 +185,15 @@ class AnomalyInquiryPage(BasePage):
         
         # We need to construct result_data mock
         r_mock = {
-            "result_id": r["result_id"],
-            "measured_value": r["anomaly_data"],
-            "result_date": r["occurrence_time"],
-            "westgard_flag": r["violated_rule"],
-            "instrument_name": r["instrument_name"],
-            "lot_number": r["qc_lot_number"]
+            "result_id": r.get("result_id"),
+            "measured_value": r.get("measured_value"),
+            "result_date": r.get("occurrence_time"),
+            "westgard_flag": r.get("violated_rule"),
+            "instrument_name": r.get("instrument_name"),
+            "lot_number": r.get("qc_lot_number")
         }
         
-        dlg = AnomalyRecordDialog(self, self.user, r_mock, r["qc_level"])
+        dlg = AnomalyRecordDialog(self, self.user, r_mock, r.get("qc_level", ""))
         dlg.exec()
         self._do_search() # refresh
 

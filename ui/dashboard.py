@@ -96,7 +96,7 @@ class DashboardPage(BasePage):
         try:
             with DBContext() as (_, cur):
                 cur.execute(
-                    "SELECT COUNT(*) AS cnt FROM qc_results WHERE DATE(entered_at)=%s",
+                    "SELECT COUNT(*) AS cnt FROM DailyQC WHERE DATE(iDate)=%s",
                     (date.today(),)
                 )
                 row = cur.fetchone()

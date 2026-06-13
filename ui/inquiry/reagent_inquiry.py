@@ -98,6 +98,9 @@ class ReagentInquiryPage(QWidget):
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         
+        # Double click
+        self.table.cellDoubleClicked.connect(self._on_double_click)
+        
         layout.addWidget(self.table)
 
     def _load_lots(self):
@@ -135,12 +138,14 @@ class ReagentInquiryPage(QWidget):
             
             if snap:
                 try:
+                    import json
                     s_data = json.loads(snap) if isinstance(snap, str) else snap
-                    old_lot = s_data.get("active_lot", "")
-                except:
-                    pass
+                    if isinstance(s_data, dict):
+                        old_lot = str(s_data.get("active_batch") or s_data.get("active_lot") or "")
+                except Exception as e:
+                    print(f"Error parsing snap: {e}")
 
-            vals = [dt, old_lot, new_lot, by]
+            vals = [str(dt), str(old_lot), str(new_lot), str(by)]
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(v)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -167,6 +172,13 @@ class ReagentInquiryPage(QWidget):
         
         if action == act_view:
             rec = self.table.item(item.row(), 0).data(Qt.ItemDataRole.UserRole)
+            self._view_acceptance(rec)
+
+    def _on_double_click(self, row, col):
+        item = self.table.item(row, 0)
+        if not item: return
+        rec = item.data(Qt.ItemDataRole.UserRole)
+        if rec:
             self._view_acceptance(rec)
 
     def _on_view_clicked(self):

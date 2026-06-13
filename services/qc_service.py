@@ -13,54 +13,84 @@ class MasterService:
     @staticmethod
     def get_instruments() -> list[dict]:
         with DBContext() as (_, cur):
-            cur.execute("SELECT instrument_id, instrument_name FROM instruments ORDER BY instrument_id")
+            # 舊系統: MhMaster
+            cur.execute("SELECT mhId AS instrument_id, mhName AS instrument_name FROM MhMaster WHERE mhName NOT IN ('77Urine', '77Urine-ec') ORDER BY mhId")
             return cur.fetchall()
 
     @staticmethod
     def get_reagents() -> list[dict]:
         with DBContext() as (_, cur):
+            # 舊系統: MhItem
+            # param_type 對應舊系統的 itemtype (Q: 定性/半定量, S: 定量)
+            # 為了相容新系統 UI，我們把 Q 映射為 1 (定量), pH 映射為 3 (數值半定量), 其餘 S 映射為 2 (文字半定量)
             cur.execute(
-                "SELECT reagent_id, reagent_name, reagent_label, param_type "
-                "FROM reagents ORDER BY display_order"
+                "SELECT mtId AS reagent_id, mhitem AS reagent_name, mhitem AS reagent_label, "
+                "CASE WHEN mhitem='pH' THEN 3 WHEN itemtype='Q' THEN 1 ELSE 2 END AS param_type "
+                "FROM MhItem ORDER BY CAST(mtId AS UNSIGNED)"
             )
             return cur.fetchall()
 
     @staticmethod
     def get_levels_for_reagent(reagent_id: int) -> list[dict]:
-        with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT level_id, level_name, qc_material FROM qc_levels "
-                "WHERE reagent_id=%s ORDER BY level_id",
-                (reagent_id,)
-            )
-            return cur.fetchall()
+        # 舊系統沒有專門的 levels 表，只分 Level 1 (L) / Level 2 (H) 等等
+        return [
+            {"level_id": 1, "level_name": "Level 1", "qc_material": ""},
+            {"level_id": 2, "level_name": "Level 2", "qc_material": ""}
+        ]
 
     @staticmethod
     def get_all_levels() -> list[dict]:
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT l.level_id, l.level_name, l.qc_material, "
-                "r.reagent_name, r.reagent_label "
-                "FROM qc_levels l JOIN reagents r ON l.reagent_id=r.reagent_id "
-                "ORDER BY l.reagent_id, l.level_id"
+                "SELECT mtId AS reagent_id, mhitem AS reagent_name, mhitem AS reagent_label "
+                "FROM MhItem ORDER BY CAST(mtId AS UNSIGNED)"
             )
-            return cur.fetchall()
+            reagents = cur.fetchall()
+            
+        levels = []
+        for r in reagents:
+            levels.append({"level_id": 1, "level_name": "Level 1", "qc_material": "", "reagent_name": r["reagent_name"], "reagent_label": r["reagent_label"], "reagent_id": r["reagent_id"]})
+            levels.append({"level_id": 2, "level_name": "Level 2", "qc_material": "", "reagent_name": r["reagent_name"], "reagent_label": r["reagent_label"], "reagent_id": r["reagent_id"]})
+        return levels
 
     @staticmethod
-    def get_iqi(instrument_id: int) -> list[dict]:
-        """取得某儀器的所有品管項目（含參數和濃度資訊）。"""
+    def get_iqi(instrument_id: str) -> list[dict]:
+        """取得某儀器的所有品管項目。舊系統透過 mhcode 關聯 MhItem。"""
         with DBContext() as (_, cur):
+            cur.execute("SELECT mhcode FROM MhMaster WHERE mhId=%s", (instrument_id,))
+            row = cur.fetchone()
+            if not row: return []
+            
             cur.execute(
-                "SELECT i.iqi_id, r.reagent_id, r.reagent_name, r.reagent_label, "
-                "r.param_type, l.level_id, l.level_name "
-                "FROM instrument_qc_items i "
-                "JOIN reagents r ON i.reagent_id = r.reagent_id "
-                "JOIN qc_levels l ON i.level_id = l.level_id "
-                "WHERE i.instrument_id = %s "
-                "ORDER BY r.display_order, l.level_id",
-                (instrument_id,)
+                "SELECT mtId AS reagent_id, mhitem AS reagent_name, mhitem AS reagent_label, "
+                "CASE WHEN mhitem='pH' THEN 3 WHEN itemtype='Q' THEN 1 ELSE 2 END AS param_type "
+                "FROM MhItem WHERE mhcode=%s ORDER BY CAST(mtId AS UNSIGNED)",
+                (row["mhcode"],)
             )
-            return cur.fetchall()
+            reagents = cur.fetchall()
+            
+        items = []
+        # IQI ID = {reagent_id}_{level_id} 為了相容新系統
+        for r in reagents:
+            items.append({
+                "iqi_id": f"{r['reagent_id']}_1",
+                "reagent_id": r["reagent_id"],
+                "reagent_name": r["reagent_name"],
+                "reagent_label": r["reagent_label"],
+                "param_type": r["param_type"],
+                "level_id": 1,
+                "level_name": "Level 1"
+            })
+            items.append({
+                "iqi_id": f"{r['reagent_id']}_2",
+                "reagent_id": r["reagent_id"],
+                "reagent_name": r["reagent_name"],
+                "reagent_label": r["reagent_label"],
+                "param_type": r["param_type"],
+                "level_id": 2,
+                "level_name": "Level 2"
+            })
+        return items
 
 
 # ── 試劑批號管理 ───────────────────────────────────────────────
@@ -108,48 +138,57 @@ class ReagentBatchService:
             cur.execute("UPDATE reagent_batches SET is_active=TRUE WHERE batch_id=%s", (batch_id,))
 
     @staticmethod
+    def delete(batch_id: int):
+        with DBContext() as (_, cur):
+            cur.execute("DELETE FROM reagent_batch_history WHERE batch_id=%s", (batch_id,))
+            cur.execute("DELETE FROM reagent_batch_acceptance WHERE batch_id=%s", (batch_id,))
+            cur.execute("DELETE FROM reagent_batches WHERE batch_id=%s", (batch_id,))
+
+    @staticmethod
     def get_recent_qc_timepoints(reagent_batch_id: int, limit: int = 3) -> list:
-        """獲取某試劑批號最近 N 次獨立的品管時間點"""
+        """獲取最近 N 次獨立的品管時間點"""
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT DISTINCT result_date FROM qc_results "
-                "WHERE reagent_batch_id=%s ORDER BY result_date DESC LIMIT %s",
-                (reagent_batch_id, limit)
+                "SELECT DISTINCT iDate AS result_date FROM DailyQC "
+                "ORDER BY iDate DESC LIMIT %s",
+                (limit,)
             )
             return [row["result_date"] for row in cur.fetchall()]
 
     @staticmethod
     def get_qc_results_by_time(reagent_batch_id: int, result_date) -> dict:
-        """獲取特定時間點下，該試劑批號的所有品管結果與目標範圍 (以 iqi_id 抓取範圍)"""
+        """獲取特定時間點下的所有品管結果與目標範圍 (自 DailyQC 抓取)"""
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT res.iqi_id, r.reagent_name, l.level_name, r.param_type, "
-                "res.measured_value, res.qualitative_result "
-                "FROM qc_results res "
-                "JOIN instrument_qc_items iqi ON res.iqi_id = iqi.iqi_id "
-                "JOIN qc_levels l ON iqi.level_id = l.level_id "
-                "JOIN reagents r ON l.reagent_id = r.reagent_id "
-                "WHERE res.reagent_batch_id=%s AND res.result_date=%s",
-                (reagent_batch_id, result_date)
+                "SELECT d.mtId AS reagent_id, re.mhitem AS reagent_name, "
+                "CASE WHEN re.mhitem='pH' THEN 3 WHEN re.itemtype='Q' THEN 1 ELSE 2 END AS param_type, "
+                "b.lot_Level, d.lot AS lot_number, "
+                "d.iValue AS measured_value, d.Check_Type AS qualitative_result "
+                "FROM DailyQC d "
+                "JOIN MhItem re ON d.mtId = re.mtId "
+                "LEFT JOIN LotTable b ON d.lot = b.lot_id "
+                "WHERE d.iDate=%s",
+                (result_date,)
             )
             rows = cur.fetchall()
             
-            # Fetch targets
             data = {}
             for row in rows:
                 rname = row["reagent_name"]
                 if rname not in data:
                     data[rname] = {'param_type': row['param_type'], 'Level 1': None, 'Level 2': None, 'Target 1': None, 'Target 2': None}
                 
-                lvl = row["level_name"]
+                lvl_num = row["lot_Level"] or "1" # fallback if not joined
+                lvl = f"Level {lvl_num}"
+                
                 val = row["measured_value"] if row["param_type"] in (1, 3) else row["qualitative_result"]
                 data[rname][lvl] = val
                 
                 # Fetch target
                 cur.execute(
-                    "SELECT tm, tsd, semi_target_min, semi_target_max FROM qc_target_settings "
-                    "WHERE iqi_id=%s ORDER BY effective_from DESC, set_at DESC LIMIT 1",
-                    (row["iqi_id"],)
+                    "SELECT tMean AS tm, tSd AS tsd, `Range` AS semi_target FROM LotTest "
+                    "WHERE mtId=%s AND lot=%s ORDER BY iDateTime DESC LIMIT 1",
+                    (row["reagent_id"], row["lot_number"])
                 )
                 ts = cur.fetchone()
                 target_str = "未設定"
@@ -159,11 +198,8 @@ class ReagentBatchService:
                             tm, tsd = float(ts["tm"]), float(ts["tsd"])
                             target_str = f"{tm - 2*tsd:.4g} - {tm + 2*tsd:.4g}"
                     else:
-                        s_min = ts["semi_target_min"]
-                        s_max = ts["semi_target_max"]
-                        if s_min and s_max:
-                            target_str = f"{s_min} - {s_max}" if s_min != s_max else s_min
-                data[rname][f"Target {lvl[-1]}"] = target_str
+                        target_str = ts["semi_target"] or "未設定"
+                data[rname][f"Target {lvl_num}"] = target_str
 
             return data
 
@@ -183,7 +219,7 @@ class ReagentBatchService:
                 (status, reagent_batch_id)
             )
             cur.execute(
-                "INSERT INTO reagent_batch_acceptance (reagent_batch_id, status, snapshot_data, accepted_by) "
+                "INSERT INTO reagent_batch_history (batch_id, status, snapshot_data, accepted_by) "
                 "VALUES (%s, %s, %s, %s)",
                 (reagent_batch_id, status, json.dumps(snapshot_data, cls=DecimalEncoder), accepted_by)
             )
@@ -192,15 +228,14 @@ class ReagentBatchService:
     def get_acceptance_records(batch_id: int) -> list[dict]:
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT a.accept_id, r.reagent_name, r.reagent_label, "
-                "l.level_name, a.accept_type, a.semi_result, a.semi_expected, "
+                "SELECT a.accept_id, r.mhitem AS reagent_name, r.mhitem AS reagent_label, "
+                "CONCAT('Level ', a.level_id) AS level_name, a.accept_type, a.semi_result, a.semi_expected, "
                 "a.semi_pass, a.calc_mean, a.calc_sd, a.result, "
                 "a.accepted_at, u.name AS accepted_by_name, a.notes "
                 "FROM reagent_batch_acceptance a "
-                "JOIN reagents r ON a.reagent_id = r.reagent_id "
-                "JOIN qc_levels l ON a.level_id = l.level_id "
+                "JOIN MhItem r ON a.reagent_id = r.mtId "
                 "JOIN users u ON a.accepted_by = u.user_id "
-                "WHERE a.batch_id=%s ORDER BY r.display_order, l.level_id",
+                "WHERE a.batch_id=%s ORDER BY CAST(r.mtId AS UNSIGNED), a.level_id",
                 (batch_id,)
             )
             return cur.fetchall()
@@ -227,123 +262,102 @@ class ReagentBatchService:
 
 class QCBatchService:
 
-    
     @staticmethod
-    def save_qc_batch_acceptance(batch_id: int, status: int):
-        from database.connection import DBContext
+    def save_qc_batch_acceptance(batch_id: str, status: int):
         with DBContext() as (_, cur):
-            cur.execute("UPDATE qc_batches SET acceptance_status=%s WHERE batch_id=%s", (status, batch_id))
+            cur.execute("UPDATE LotTable SET acceptance_status=%s WHERE lot_id=%s", (str(status), batch_id))
 
     @staticmethod
-    def get_qc_batch_stats(batch_id: int, start_date, end_date) -> dict:
-        from database.connection import DBContext
-        import statistics
-        
-        # We need to get all qc_results for this batch between dates
+    def get_qc_batch_stats(batch_id: str, start_date, end_date) -> dict:
         stats = {"qual": {}, "quant": {}}
+        import math
         
         with DBContext() as (_, cur):
-            # Fetch qualitative results
-            cur.execute(
-                "SELECT res.iqi_id, r.reagent_name, r.reagent_label, "
-                "COALESCE(res.qualitative_result, CAST(res.measured_value AS CHAR)) AS qualitative_result, "
-                "ts.semi_target_min, ts.semi_target_max "
-                "FROM qc_results res "
-                "JOIN instrument_qc_items iqi ON res.iqi_id = iqi.iqi_id "
-                "JOIN reagents r ON iqi.reagent_id = r.reagent_id "
-                "LEFT JOIN qc_target_settings ts ON ts.setting_id = ("
-                "  SELECT setting_id FROM qc_target_settings ts2 "
-                "  WHERE ts2.iqi_id = res.iqi_id AND ts2.qc_batch_id = res.qc_batch_id "
-                "  ORDER BY set_at DESC LIMIT 1"
-                ") "
-                "WHERE res.qc_batch_id=%s AND r.param_type IN (2, 3) "
-                "AND DATE(res.result_date) BETWEEN %s AND %s",
-                (batch_id, start_date, end_date)
-            )
-            qual_rows = cur.fetchall()
+            cur.execute("SELECT lot, lot_Level FROM LotTable WHERE lot_id=%s", (batch_id,))
+            b_row = cur.fetchone()
+            if not b_row: return stats
+            lot = b_row["lot"]
+            level_id = b_row["lot_Level"]
             
-            # Fetch quantitative results
             cur.execute(
-                "SELECT res.iqi_id, r.reagent_name, r.reagent_label, res.measured_value, "
-                "ts.tm, ts.tsd "
-                "FROM qc_results res "
-                "JOIN instrument_qc_items iqi ON res.iqi_id = iqi.iqi_id "
-                "JOIN reagents r ON iqi.reagent_id = r.reagent_id "
-                "LEFT JOIN qc_target_settings ts ON ts.setting_id = ("
-                "  SELECT setting_id FROM qc_target_settings ts2 "
-                "  WHERE ts2.iqi_id = res.iqi_id AND ts2.qc_batch_id = res.qc_batch_id "
-                "  ORDER BY set_at DESC LIMIT 1"
-                ") "
-                "WHERE res.qc_batch_id=%s AND r.param_type=1 "
-                "AND DATE(res.result_date) BETWEEN %s AND %s",
-                (batch_id, start_date, end_date)
+                "SELECT mtId AS reagent_id, mhitem AS reagent_name, "
+                "CASE WHEN mhitem='pH' THEN 3 WHEN itemtype='Q' THEN 1 ELSE 2 END AS param_type "
+                "FROM MhItem"
             )
-            quant_rows = cur.fetchall()
+            is_chem_lot = lot.upper().startswith('C')
+            is_sed_lot = lot.upper().startswith('D')
             
-            # Process Qual
-            for row in qual_rows:
-                rname = row["reagent_name"]
-                if rname not in stats["qual"]:
-                    rng = "未設定"
-                    if row["semi_target_min"] and row["semi_target_max"]:
-                        rng = f"{row['semi_target_min']} - {row['semi_target_max']}" if row['semi_target_min'] != row['semi_target_max'] else row['semi_target_min']
+            reagents = {}
+            for r in cur.fetchall():
+                is_sed_reagent = r["reagent_name"] in ("RBC", "WBC")
+                if is_chem_lot and is_sed_reagent:
+                    continue
+                if is_sed_lot and not is_sed_reagent:
+                    continue
+                reagents[str(r["reagent_id"])] = r
+            
+            cur.execute(
+                "SELECT mtId, iValue, Check_Type, sdFlag "
+                "FROM DailyQC "
+                "WHERE lot=%s AND iDate BETWEEN %s AND %s",
+                (batch_id, f"{start_date} 00:00:00", f"{end_date} 23:59:59")
+            )
+            rows = cur.fetchall()
+            
+            for rid, rinfo in reagents.items():
+                iqi_id = f"{rid}_{level_id}"
+                ts = TargetSettingService.get_for_batch(iqi_id, batch_id)
+                if not ts: ts = TargetSettingService.get_current(iqi_id)
+                
+                if rinfo["param_type"] in (2, 3):
+                    rng_str = "—"
+                    s_min, s_max = None, None
+                    if ts and ts.get("semi_target_min"):
+                        s_min = ts.get("semi_target_min")
+                        s_max = ts.get("semi_target_max")
+                        rng_str = f"{s_min} ~ {s_max}" if s_min != s_max else str(s_min)
                     
-                    stats["qual"][rname] = {
-                        "label": row["reagent_label"],
-                        "range": rng,
-                        "s_min": row["semi_target_min"],
-                        "s_max": row["semi_target_max"],
-                        "n": 0,
-                        "passed": 0,
-                        "failed": 0
+                    stats["qual"][rinfo["reagent_name"]] = {
+                        "n": 0, "passed": 0, "failed": 0, "range": rng_str, "reagent_id": rid,
+                        "s_min": s_min, "s_max": s_max
                     }
-                
-                # Check pass/fail (simple matching for now, as we don't have full ordinal comparison in SQL easily)
-                res = row["qualitative_result"]
-                s_min = row["semi_target_min"]
-                s_max = row["semi_target_max"]
-                
-                passed = False
-                if res and s_min and s_max:
-                    SEMI_ORDER = {"Neg": 0, "Trace": 1, "1+": 2, "2+": 3, "3+": 4}
-                    if res in SEMI_ORDER and s_min in SEMI_ORDER and s_max in SEMI_ORDER:
-                        if SEMI_ORDER[s_min] <= SEMI_ORDER[res] <= SEMI_ORDER[s_max]:
-                            passed = True
-                
-                stats["qual"][rname]["n"] += 1
-                if passed:
-                    stats["qual"][rname]["passed"] += 1
                 else:
-                    stats["qual"][rname]["failed"] += 1
-                    
-            # Process Quant
-            quant_grouped = {}
-            for row in quant_rows:
-                rname = row["reagent_name"]
-                if rname not in quant_grouped:
-                    quant_grouped[rname] = {
-                        "label": row["reagent_label"],
-                        "values": [],
-                        "tm": row["tm"],
-                        "tsd": row["tsd"]
+                    tm = ts["tm"] if ts and ts.get("tm") is not None else None
+                    tsd = ts["tsd"] if ts and ts.get("tsd") is not None else None
+                    stats["quant"][rinfo["reagent_name"]] = {
+                        "n": 0, "tm": tm, "tsd": tsd, "am": None, "asd": None,
+                        "values": [], "reagent_id": rid
                     }
-                val = row["measured_value"]
-                if val is not None:
-                    quant_grouped[rname]["values"].append(float(val))
                     
-            for rname, data in quant_grouped.items():
-                vals = data["values"]
-                am = statistics.mean(vals) if vals else None
-                asd = statistics.stdev(vals) if len(vals) > 1 else (0.0 if len(vals)==1 else None)
+            for row in rows:
+                rid = str(row["mtId"])
+                rinfo = reagents.get(rid)
+                if not rinfo: continue
+                rname = rinfo["reagent_name"]
                 
-                stats["quant"][rname] = {
-                    "label": data["label"],
-                    "tm": data["tm"],
-                    "tsd": data["tsd"],
-                    "am": am,
-                    "asd": asd,
-                    "n": len(vals)
-                }
+                if rinfo["param_type"] in (2, 3):
+                    stats["qual"][rname]["n"] += 1
+                    if row["sdFlag"] == 0:
+                        stats["qual"][rname]["passed"] += 1
+                    else:
+                        stats["qual"][rname]["failed"] += 1
+                else:
+                    v = row["iValue"]
+                    if v is not None:
+                        stats["quant"][rname]["n"] += 1
+                        stats["quant"][rname]["values"].append(v)
+                        
+            for rname, data in stats["quant"].items():
+                vals = data["values"]
+                if len(vals) > 0:
+                    am = sum(vals) / len(vals)
+                    data["am"] = am
+                    if len(vals) > 1:
+                        variance = sum((x - am) ** 2 for x in vals) / (len(vals) - 1)
+                        data["asd"] = math.sqrt(variance)
+                    else:
+                        data["asd"] = 0.0
+                del data["values"]
                 
         return stats
 
@@ -351,88 +365,124 @@ class QCBatchService:
     def get_all() -> list[dict]:
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT b.batch_id, b.level_id, l.level_name, "
-                "r.reagent_name, r.reagent_label, "
-                "b.lot_number, b.expiry_date, b.open_date, b.is_active, b.is_archived, "
-                "b.notes, b.created_at, u.name AS created_by_name "
-                "FROM qc_batches b "
-                "JOIN qc_levels l ON b.level_id = l.level_id "
-                "JOIN reagents r ON l.reagent_id = r.reagent_id "
-                "JOIN users u ON b.created_by = u.user_id "
-                "ORDER BY b.created_at DESC"
+                "SELECT lot_id AS batch_id, "
+                "CASE WHEN lot_Level='1' THEN 1 ELSE 2 END AS level_id, "
+                "CASE WHEN lot_Level='1' THEN 'Level 1' ELSE 'Level 2' END AS level_name, "
+                "lot AS lot_number, QC_date AS open_date, expiry_date, Writedate AS created_at, "
+                "iUser AS created_by_name, is_active, is_archived, acceptance_status, '' AS notes "
+                "FROM LotTable ORDER BY lot, lot_Level"
             )
-            return cur.fetchall()
+            rows = cur.fetchall()
+            
+            groups = {}
+            for r in rows:
+                lot = r["lot_number"]
+                if lot not in groups:
+                    groups[lot] = {
+                        "lot_number": lot,
+                        "open_date": r["open_date"],
+                        "expiry_date": r["expiry_date"],
+                        "created_at": r["created_at"],
+                        "created_by_name": r["created_by_name"],
+                        "is_active": r["is_active"],
+                        "is_archived": r["is_archived"],
+                        "acceptance_status": r["acceptance_status"],
+                        "notes": r["notes"],
+                        "sub_lots": []
+                    }
+                groups[lot]["sub_lots"].append({
+                    "batch_id": r["batch_id"],
+                    "level_id": r["level_id"],
+                    "level_name": r["level_name"]
+                })
+            
+            # Sort by created_at descending
+            def get_time(dt):
+                if not dt: return ""
+                if isinstance(dt, str): return dt
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+                
+            return sorted(list(groups.values()), key=lambda x: get_time(x["created_at"]), reverse=True)
+
+    @staticmethod
+    def get_active_sub_batch_id(level_id: str, prefix: str) -> str | None:
+        from database.connection import DBContext
+        with DBContext() as (_, cur):
+            cur.execute(
+                "SELECT lot_id FROM LotTable "
+                "WHERE lot_Level=%s AND is_active=1 AND UPPER(lot) LIKE %s "
+                "ORDER BY Writedate DESC LIMIT 1",
+                (level_id, f"{prefix}%")
+            )
+            row = cur.fetchone()
+            return row["lot_id"] if row else None
 
     @staticmethod
     def get_active_batches() -> list[dict]:
-        """取得目前使用中的品管液批號（Level 1 & Level 2，每個 level 各一筆）。"""
+        """取得目前使用中的品管液批號。舊系統只分 Level 1 和 Level 2，用 lot_Level 區分。"""
         with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT b.batch_id, b.level_id, l.level_name, b.lot_number, b.expiry_date "
-                "FROM qc_batches b JOIN qc_levels l ON b.level_id = l.level_id "
-                "WHERE b.is_active=TRUE"
-            )
-            return cur.fetchall()
+            # 取最新的一筆 level 1 和 level 2
+            batches = []
+            cur.execute("SELECT lot_id AS batch_id, 1 AS level_id, 'Level 1' AS level_name, lot AS lot_number, expiry_date FROM LotTable WHERE lot_Level='1' AND is_active=1 ORDER BY Writedate DESC LIMIT 1")
+            l1 = cur.fetchone()
+            if l1: batches.append(l1)
+            
+            cur.execute("SELECT lot_id AS batch_id, 2 AS level_id, 'Level 2' AS level_name, lot AS lot_number, expiry_date FROM LotTable WHERE lot_Level='2' AND is_active=1 ORDER BY Writedate DESC LIMIT 1")
+            l2 = cur.fetchone()
+            if l2: batches.append(l2)
+            
+            return batches
 
     @staticmethod
-    def create(level_id: int, lot_number: str, expiry_date, open_date,
-               notes: str, created_by: int) -> int:
+    def create_mother_batch(mother_lot: str, l1_lot_id: str, l2_lot_id: str, expiry_date, open_date,
+                            notes: str, created_by: int) -> str:
         with DBContext() as (_, cur):
+            from datetime import datetime
+            import uuid
+            now = datetime.now()
+            
+            l1_id = l1_lot_id if l1_lot_id else str(uuid.uuid4())
+            l2_id = l2_lot_id if l2_lot_id else str(uuid.uuid4())
+            
+            # Insert L1
             cur.execute(
-                "INSERT INTO qc_batches "
-                "(level_id, lot_number, expiry_date, open_date, notes, created_by) "
-                "VALUES (%s,%s,%s,%s,%s,%s)",
-                (level_id, lot_number, expiry_date, open_date, notes or None, created_by),
+                "INSERT INTO LotTable (lot, lot_id, lot_Level, QC_date, expiry_date, Writedate, iUser, is_active, is_archived, acceptance_status) "
+                "VALUES (%s,%s,'1',%s,%s,%s,%s, 0, 0, 'pending')",
+                (mother_lot, l1_id, open_date, expiry_date, now, "Admin"),
             )
-            return cur.lastrowid
+            # Insert L2
+            cur.execute(
+                "INSERT INTO LotTable (lot, lot_id, lot_Level, QC_date, expiry_date, Writedate, iUser, is_active, is_archived, acceptance_status) "
+                "VALUES (%s,%s,'2',%s,%s,%s,%s, 0, 0, 'pending')",
+                (mother_lot, l2_id, open_date, expiry_date, now, "Admin"),
+            )
+            return mother_lot
 
     @staticmethod
-    def set_active(batch_id: int, level_id: int):
-        """將指定 level 的其他批號停用並退役，啟用此批號。"""
+    def toggle_active(mother_lot: str, is_active: bool):
         with DBContext() as (_, cur):
-            cur.execute(
-                "UPDATE qc_batches SET is_archived=TRUE WHERE is_active=TRUE AND level_id=%s AND batch_id!=%s",
-                (level_id, batch_id)
-            )
-            cur.execute(
-                "UPDATE qc_batches SET is_active=FALSE WHERE level_id=%s", (level_id,)
-            )
-            cur.execute(
-                "UPDATE qc_batches SET is_active=TRUE, is_archived=FALSE WHERE batch_id=%s", (batch_id,)
-            )
+            if is_active:
+                cur.execute("UPDATE LotTable SET is_active=1, is_archived=0 WHERE lot=%s", (mother_lot,))
+            else:
+                cur.execute("UPDATE LotTable SET is_active=0, is_archived=1 WHERE lot=%s", (mother_lot,))
+
+    @staticmethod
+    def delete(mother_lot: str):
+        with DBContext() as (_, cur):
+            # Also delete associated Target Settings (LotTest uses lot_id as lot)
+            cur.execute("SELECT lot_id FROM LotTable WHERE lot=%s", (mother_lot,))
+            rows = cur.fetchall()
+            for row in rows:
+                cur.execute("DELETE FROM LotTest WHERE lot=%s", (row["lot_id"],))
+            cur.execute("DELETE FROM LotTable WHERE lot=%s", (mother_lot,))
 
     @staticmethod
     def get_acceptance_records(qc_batch_id: int) -> list[dict]:
-        with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT a.accept_id, r.reagent_name, r.reagent_label, "
-                "a.accept_type, a.semi_result, a.semi_expected, a.semi_pass, "
-                "a.calc_mean, a.calc_sd, a.result, "
-                "a.accepted_at, u.name AS accepted_by_name, a.notes, a.measured_values "
-                "FROM qc_batch_acceptance a "
-                "JOIN reagents r ON a.reagent_id = r.reagent_id "
-                "JOIN users u ON a.accepted_by = u.user_id "
-                "WHERE a.qc_batch_id=%s ORDER BY r.display_order",
-                (qc_batch_id,)
-            )
-            return cur.fetchall()
+        return []
 
     @staticmethod
-    def save_acceptance(qc_batch_id: int, reagent_id: int, accept_type: int,
-                        semi_result: str, semi_expected: str, semi_pass: bool,
-                        measured_values: list, calc_mean: float, calc_sd: float,
-                        result: bool, notes: str, accepted_by: int):
-        with DBContext() as (_, cur):
-            cur.execute(
-                "INSERT INTO qc_batch_acceptance "
-                "(qc_batch_id, reagent_id, accept_type, semi_result, semi_expected, "
-                "semi_pass, measured_values, calc_mean, calc_sd, result, notes, accepted_by) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (qc_batch_id, reagent_id, accept_type,
-                 semi_result, semi_expected, semi_pass,
-                 json.dumps(measured_values) if measured_values else None,
-                 calc_mean, calc_sd, result, notes or None, accepted_by)
-            )
+    def save_acceptance(*args, **kwargs):
+        pass
 
 
 # ── TM / TSD 設定 ─────────────────────────────────────────────
@@ -440,79 +490,115 @@ class QCBatchService:
 class TargetSettingService:
 
     @staticmethod
-    def get_current(iqi_id: int) -> dict | None:
-        with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT setting_id, tm, tsd, cva_percent, tea_percent, semi_target_min, semi_target_max, mode, effective_from, set_at, change_reason "
-                "FROM qc_target_settings "
-                "WHERE iqi_id=%s ORDER BY effective_from DESC, set_at DESC LIMIT 1",
-                (iqi_id,)
-            )
-            return cur.fetchone()
+    def _parse_semi_range(row: dict | None) -> dict | None:
+        if row and row.get("semi_target_min"):
+            rng = row["semi_target_min"]
+            if "-" in rng and not rng.startswith("-"):
+                parts = rng.split("-")
+                if len(parts) == 2:
+                    row["semi_target_min"] = parts[0].strip()
+                    row["semi_target_max"] = parts[1].strip()
+        return row
 
     @staticmethod
-    def get_for_batch(iqi_id: int, qc_batch_id: int) -> dict | None:
-        with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT setting_id, tm, tsd, cva_percent, tea_percent, semi_target_min, semi_target_max, mode, effective_from, set_at, change_reason "
-                "FROM qc_target_settings "
-                "WHERE iqi_id=%s AND qc_batch_id=%s ORDER BY set_at DESC LIMIT 1",
-                (iqi_id, qc_batch_id)
-            )
-            return cur.fetchone()
+    def get_current(iqi_id: str) -> dict | None:
+        return TargetSettingService.get_for_batch(iqi_id, None)
 
     @staticmethod
-    def get_history(iqi_id: int) -> list[dict]:
-        from database.connection import DBContext
+    def get_for_batch(iqi_id: str, qc_batch_id: int | None) -> dict | None:
+        # iqi_id = f"{reagent_id}_{level_id}"
+        reagent_id, level_id = iqi_id.split('_')
+        with DBContext() as (_, cur):
+            if qc_batch_id:
+                lot = qc_batch_id
+            else:
+                cur.execute("SELECT lot_id FROM LotTable WHERE lot_Level=%s AND is_active=1 ORDER BY Writedate DESC LIMIT 1", (level_id,))
+                row = cur.fetchone()
+                if not row: return None
+                lot = row["lot_id"]
+                
+            cur.execute(
+                "SELECT ltId AS setting_id, tMean AS tm, tSd AS tsd, TEA AS tea_percent, "
+                "`Range` AS semi_target_min, `Range` AS semi_target_max, "
+                "0 AS mode, iDateTime AS effective_from, iDateTime AS set_at, '' AS change_reason "
+                "FROM LotTest "
+                "WHERE mtId=%s AND lot=%s ORDER BY iDateTime DESC LIMIT 1",
+                (reagent_id, lot)
+            )
+            return TargetSettingService._parse_semi_range(cur.fetchone())
+
+    @staticmethod
+    def get_history(iqi_id: str) -> list[dict]:
+        reagent_id, _ = iqi_id.split('_')
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT s.*, u.name as set_by_name "
-                "FROM qc_target_settings s "
-                "JOIN users u ON s.set_by = u.user_id "
-                "WHERE s.iqi_id = %s "
-                "ORDER BY s.effective_from DESC, s.set_at DESC",
-                (iqi_id,)
+                "SELECT ltId AS setting_id, tMean AS tm, tSd AS tsd, TEA AS tea_percent, "
+                "`Range` AS semi_target_min, `Range` AS semi_target_max, "
+                "iDateTime AS effective_from, iDateTime AS set_at, "
+                "iUser AS set_by_name, '' AS change_reason "
+                "FROM LotTest "
+                "WHERE mtId=%s ORDER BY iDateTime DESC",
+                (reagent_id,)
             )
-            return cur.fetchall()
+            return [TargetSettingService._parse_semi_range(r) for r in cur.fetchall()]
 
     @staticmethod
     def get_by_batch(qc_batch_id: int) -> dict:
         """Returns a dict mapping iqi_id to its target setting for a given batch."""
-        from database.connection import DBContext
         with DBContext() as (_, cur):
+            cur.execute("SELECT lot, lot_Level FROM LotTable WHERE lot_id=%s", (qc_batch_id,))
+            b_row = cur.fetchone()
+            if not b_row: return {}
+            
             cur.execute(
-                "SELECT iqi_id, tm, tsd, cva_percent, tea_percent, semi_target_min, semi_target_max, mode, effective_from, set_at, change_reason "
-                "FROM qc_target_settings "
-                "WHERE qc_batch_id=%s ORDER BY set_at DESC",
+                "SELECT mtId AS reagent_id, ltId AS setting_id, tMean AS tm, tSd AS tsd, TEA AS tea_percent, "
+                "`Range` AS semi_target_min, `Range` AS semi_target_max, "
+                "0 AS mode, iDateTime AS effective_from, iDateTime AS set_at, '' AS change_reason "
+                "FROM LotTest WHERE lot=%s ORDER BY iDateTime DESC",
                 (qc_batch_id,)
             )
             rows = cur.fetchall()
             res = {}
             for r in rows:
-                if r["iqi_id"] not in res:
-                    res[r["iqi_id"]] = r
+                iqi = f"{r['reagent_id']}_{b_row['lot_Level']}"
+                if iqi not in res:
+                    res[iqi] = TargetSettingService._parse_semi_range(r)
             return res
 
     @staticmethod
-    def save(iqi_id: int, qc_batch_id: int, tm: float, tsd: float,
+    def save(iqi_id: str, qc_batch_id: str, tm: float, tsd: float,
              cva: float, tea: float, mode: int, effective_from: date, set_by: int, change_reason: str = None):
+        reagent_id, level_id = iqi_id.split('_')
         with DBContext() as (_, cur):
+            cur.execute("SELECT mhId FROM LotTable WHERE lot_id=%s", (qc_batch_id,))
+            b_row = cur.fetchone()
+            if not b_row: return
+            from datetime import datetime
+            
             cur.execute(
-                "INSERT INTO qc_target_settings "
-                "(iqi_id, qc_batch_id, tm, tsd, cva_percent, tea_percent, mode, effective_from, set_by, change_reason) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (iqi_id, qc_batch_id, tm, tsd, cva, tea, mode, effective_from, set_by, change_reason)
+                "INSERT INTO LotTest "
+                "(mhId, cId, mtId, lot, tMean, tSd, CVA, TEA, iDateTime, iUser, LotStyle) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (b_row["mhId"], "", reagent_id, qc_batch_id, tm, tsd, cva, tea, datetime.now(), "Admin", "N")
             )
 
     @staticmethod
-    def save_semi_target(iqi_id: int, qc_batch_id: int, semi_min: str, semi_max: str,
+    def save_semi_target(iqi_id: str, qc_batch_id: str, semi_min: str, semi_max: str,
                          mode: int, effective_from: date, set_by: int, change_reason: str = None):
+        reagent_id, level_id = iqi_id.split('_')
         with DBContext() as (_, cur):
+            cur.execute("SELECT mhId FROM LotTable WHERE lot_id=%s", (qc_batch_id,))
+            b_row = cur.fetchone()
+            if not b_row: return
+            from datetime import datetime
+            
+            # Use semi_max for range
+            rng = f"{semi_min}-{semi_max}" if semi_min != semi_max else semi_max
             cur.execute(
-                "INSERT INTO qc_target_settings "
-                "(iqi_id, qc_batch_id, semi_target_min, semi_target_max, mode, effective_from, set_by, change_reason) "
+                "INSERT INTO LotTest "
+                "(mhId, cId, mtId, lot, `Range`, iDateTime, iUser, LotStyle) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                (iqi_id, qc_batch_id, semi_min, semi_max, mode, effective_from, set_by, change_reason)
+                (b_row["mhId"], "", reagent_id, qc_batch_id, rng, datetime.now(), "Admin", "N")
             )
 
 
@@ -521,65 +607,110 @@ class TargetSettingService:
 class QCResultService:
 
     @staticmethod
-    def save_result(iqi_id: int, result_date: date,
+    def save_result(iqi_id: str, result_date: date,
                     reagent_batch_id: int | None, qc_batch_id: int | None,
                     measured_value: float | None, qualitative_result: str | None,
-                    notes: str, entered_by: int, source: int = 1) -> int:
+                    notes: str, entered_by: int, source: int = 1, instrument_id: str = None) -> int:
         """儲存單筆品管結果，自動進行 Westgard 判斷。"""
         is_accepted, westgard_flag = QCResultService._check_westgard(
             iqi_id, result_date, measured_value, qualitative_result, qc_batch_id
         )
+        
+        reagent_id, level_id = iqi_id.split('_')
+        
         with DBContext() as (_, cur):
+            # Fetch lot name and mhId
+            lot_id_to_save = qc_batch_id if qc_batch_id else ""
+            mhId = instrument_id if instrument_id else ""
+            if qc_batch_id:
+                cur.execute("SELECT mhId FROM LotTable WHERE lot_id=%s", (qc_batch_id,))
+                r = cur.fetchone()
+                if r and not mhId and r["mhId"]:
+                    mhId = r["mhId"]
+                    
+            from datetime import datetime
+            now = datetime.now()
+            # source=1 usually means manual entry
+            check_type = qualitative_result if qualitative_result else ""
+            sd_flag_val = 0 if is_accepted else 1 # Simple mapping for sdFlag
+            
+            if isinstance(result_date, datetime):
+                dt_val = result_date
+            else:
+                dt_val = datetime.combine(result_date, datetime.min.time())
+                
             cur.execute(
-                "INSERT INTO qc_results "
-                "(iqi_id, result_date, reagent_batch_id, qc_batch_id, "
-                "measured_value, qualitative_result, is_accepted, westgard_flag, "
-                "source, notes, entered_by) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (iqi_id, result_date, reagent_batch_id, qc_batch_id,
-                 measured_value, qualitative_result, is_accepted, westgard_flag,
-                 source, notes or None, entered_by)
+                "INSERT INTO DailyQC "
+                "(mhId, mtId, iValue, iDate, iUser, lot, sdFlag, sysTime, Check_Type) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (mhId, reagent_id, measured_value, dt_val, 
+                 "Admin", lot_id_to_save, sd_flag_val, now, check_type)
             )
             return cur.lastrowid
 
     @staticmethod
-    def get_results(iqi_id: int, from_date: date, to_date: date) -> list[dict]:
+    def get_results(iqi_id: str, from_date: date, to_date: date, instrument_id: str = None) -> list[dict]:
+        reagent_id, level_id = iqi_id.split('_')
         with DBContext() as (_, cur):
-            cur.execute(
-                "SELECT r.result_id, r.result_date, r.measured_value, r.qc_batch_id, "
-                "r.qualitative_result, r.is_accepted, r.westgard_flag, "
-                "r.source, r.notes, r.entered_at, u.name AS entered_by_name, "
-                "EXISTS(SELECT 1 FROM qc_anomaly_records a WHERE a.result_id = r.result_id) AS has_anomaly "
-                "FROM qc_results r JOIN users u ON r.entered_by = u.user_id "
-                "WHERE r.iqi_id=%s AND r.result_date >= %s AND r.result_date <= %s "
-                "ORDER BY r.result_date ASC, r.entered_at ASC",
-                (iqi_id, f"{from_date} 00:00:00", f"{to_date} 23:59:59")
+            query = (
+                "SELECT d.dqcId AS result_id, d.iDate AS result_date, d.iValue AS measured_value, "
+                "d.lot AS qc_batch_id, b.lot AS base_lot_number, d.Check_Type AS qualitative_result, "
+                "CASE WHEN d.sdFlag=0 THEN 1 ELSE 0 END AS is_accepted, '' AS westgard_flag, "
+                "1 AS source, IFNULL(n.notes, '') AS notes, d.sysTime AS entered_at, d.iUser AS entered_by_name, "
+                "EXISTS(SELECT 1 FROM QCaberrant a WHERE a.dqcId = d.dqcId) AS has_anomaly "
+                "FROM DailyQC d "
+                "LEFT JOIN DailyQC_notes n ON d.dqcId = n.dqcId "
+                "JOIN LotTable b ON b.lot_id = d.lot AND b.lot_Level=%s "
+                "WHERE d.mtId=%s AND d.iDate >= %s AND d.iDate <= %s "
             )
+            params = [level_id, reagent_id, f"{from_date} 00:00:00", f"{to_date} 23:59:59"]
+            
+            if instrument_id:
+                query += " AND d.mhId=%s "
+                params.append(instrument_id)
+                
+            query += "ORDER BY d.iDate ASC, d.sysTime ASC"
+            
+            cur.execute(query, params)
             return cur.fetchall()
 
     @staticmethod
     def update_note(result_id: int, notes: str):
         with DBContext() as (_, cur):
             cur.execute(
-                "UPDATE qc_results SET notes=%s WHERE result_id=%s",
-                (notes, result_id)
+                "INSERT INTO DailyQC_notes (dqcId, notes) VALUES (%s, %s) "
+                "ON DUPLICATE KEY UPDATE notes = VALUES(notes)",
+                (result_id, notes)
             )
 
     @staticmethod
-    def get_total_stats(iqi_id: int, qc_batch_id: int = None) -> dict:
+    def get_total_stats(iqi_id: str, qc_batch_id: int = None, instrument_id: str = None) -> dict:
+        reagent_id, level_id = iqi_id.split('_')
         with DBContext() as (_, cur):
             if qc_batch_id is not None:
-                cur.execute(
-                    "SELECT measured_value, qualitative_result, is_accepted "
-                    "FROM qc_results WHERE iqi_id=%s AND qc_batch_id=%s",
-                    (iqi_id, qc_batch_id)
+                cur.execute("SELECT lot FROM LotTable WHERE lot_id=%s", (qc_batch_id,))
+                r = cur.fetchone()
+                if not r: return {"n": 0, "mean": None, "sd": None, "accept": 0, "reject": 0}
+                
+                query = (
+                    "SELECT iValue AS measured_value, Check_Type AS qualitative_result, "
+                    "CASE WHEN sdFlag=0 THEN 1 ELSE 0 END AS is_accepted "
+                    "FROM DailyQC WHERE mtId=%s AND lot=%s"
                 )
+                params = [reagent_id, qc_batch_id]
             else:
-                cur.execute(
-                    "SELECT measured_value, qualitative_result, is_accepted "
-                    "FROM qc_results WHERE iqi_id=%s",
-                    (iqi_id,)
+                query = (
+                    "SELECT iValue AS measured_value, Check_Type AS qualitative_result, "
+                    "CASE WHEN sdFlag=0 THEN 1 ELSE 0 END AS is_accepted "
+                    "FROM DailyQC WHERE mtId=%s"
                 )
+                params = [reagent_id]
+                
+            if instrument_id:
+                query += " AND mhId=%s"
+                params.append(instrument_id)
+                
+            cur.execute(query, params)
             rows = cur.fetchall()
             
         stats = {"n": len(rows), "mean": None, "sd": None, "accept": 0, "reject": 0}
@@ -593,8 +724,7 @@ class QCResultService:
                 stats["sd"] = float(np.std(valid_vals, ddof=1))
         
         for r in rows:
-            # None or 1 is considered accepted in legacy data, 0 is rejected
-            if r["is_accepted"] is False or r["is_accepted"] == 0:
+            if r["is_accepted"] == 0:
                 stats["reject"] += 1
             else:
                 stats["accept"] += 1
@@ -602,7 +732,7 @@ class QCResultService:
         return stats
 
     @staticmethod
-    def _check_westgard(iqi_id: int, result_date: date,
+    def _check_westgard(iqi_id: str, result_date: date,
                         value: float | None, qualitative: str | None,
                         qc_batch_id: int | None = None
                         ) -> tuple[bool, str | None]:
@@ -626,10 +756,25 @@ class QCResultService:
             if not s_min or not s_max:
                 return True, None
                 
-            levels = {"Neg": 0, "Trace": 0.5, "1+": 1, "2+": 2, "3+": 3}
+            reagent_id = iqi_id.split('_')[0]
+            rname = ""
+            from database.connection import DBContext
+            with DBContext() as (_, cur):
+                cur.execute("SELECT mhitem FROM MhItem WHERE mtId=%s", (reagent_id,))
+                r = cur.fetchone()
+                if r: rname = r["mhitem"]
+                
+            if rname == "NIT":
+                levels = {"Neg": 0, "Pos": 1}
+            else:
+                levels = {"Neg": 0, "1+": 1, "2+": 2, "3+": 3, "4+": 4}
             q_val = levels.get(qualitative)
-            min_val = levels.get(s_min)
-            max_val = levels.get(s_max)
+            
+            min_lbl = str(s_min)
+            max_lbl = str(s_max)
+                
+            min_val = levels.get(min_lbl)
+            max_val = levels.get(max_lbl)
             
             if q_val is not None and min_val is not None and max_val is not None:
                 if min_val <= q_val <= max_val:
@@ -637,18 +782,6 @@ class QCResultService:
                 else:
                     return False, "Out of Range"
             return True, None
-
-        # 數值半定量判定 (param_type=3)
-        if value is not None and ts and ts.get("semi_target_min") is not None and ts.get("tm") is None:
-            try:
-                min_val = float(ts["semi_target_min"])
-                max_val = float(ts["semi_target_max"])
-                if min_val <= value <= max_val:
-                    return True, None
-                else:
-                    return False, "Out of Range"
-            except (ValueError, TypeError):
-                return True, None
 
         if not ts or ts.get("tm") is None or ts.get("tsd") is None:
             return True, None
@@ -658,38 +791,40 @@ class QCResultService:
         if tsd == 0:
             return True, None
 
-        z = (value - tm) / tsd
+        z = round((value - tm) / tsd, 6)
 
         # 1-3S：超出 ±3SD
         if abs(z) > 3:
             return False, "1-3S"
 
-        # 2-2S 和 R-4S 需要前一筆
+        # 2-2S 需要前一筆
         prev = QCResultService._get_previous_value(iqi_id, result_date)
         if prev is not None:
-            z_prev = (prev - tm) / tsd
+            z_prev = round((prev - tm) / tsd, 6)
             # 2-2S：連續兩點同側超出 ±2SD
             if z > 2 and z_prev > 2:
                 return False, "2-2S"
             if z < -2 and z_prev < -2:
                 return False, "2-2S"
-            # R-4S：相鄰兩點差距 > 4SD
-            if abs(z - z_prev) > 4:
-                return False, "R-4S"
+
+        # 1-2S：超出 ±2SD
+        if abs(z) > 2:
+            return False, "1-2S"
 
         return True, None
 
     @staticmethod
-    def _get_previous_value(iqi_id: int, before_date: date) -> float | None:
+    def _get_previous_value(iqi_id: str, before_date: date) -> float | None:
+        reagent_id, level_id = iqi_id.split('_')
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT measured_value FROM qc_results "
-                "WHERE iqi_id=%s AND result_date < %s AND measured_value IS NOT NULL "
-                "ORDER BY result_date DESC LIMIT 1",
-                (iqi_id, before_date)
+                "SELECT iValue FROM DailyQC "
+                "WHERE mtId=%s AND iDate < %s AND iValue IS NOT NULL "
+                "ORDER BY iDate DESC LIMIT 1",
+                (reagent_id, f"{before_date} 00:00:00")
             )
             row = cur.fetchone()
-        return float(row["measured_value"]) if row and row["measured_value"] is not None else None
+        return float(row["iValue"]) if row and row["iValue"] is not None else None
 
 
 # ── 統計計算工具 ───────────────────────────────────────────────

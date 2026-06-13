@@ -1,6 +1,10 @@
 # config.py — UrineConSoft 設定
 # 請依實際環境修改以下設定
 
+# 系統環境設定: 'TEST' 或 'PROD' (主要影響除錯模式或後續其它設定)
+ENV = "PROD"
+
+# 本地 MySQL 設定 (測試用)
 DB_CONFIG = {
     "host":               "127.0.0.1",
     "port":               3306,
@@ -9,6 +13,16 @@ DB_CONFIG = {
     "database":           "qc_system",
     "charset":            "utf8mb4",
     "connection_timeout": 10,
+}
+
+# 院方 SQL Server 設定 (PROD 模式使用)
+MSSQL_CONFIG = {
+    "server": "10.9.8.100",
+    "user": "hitsrv",
+    "password": "hitsrv",
+    "database": "ULink",
+    "charset": "utf8",
+    "login_timeout": 5,
 }
 
 POOL_CONFIG = {

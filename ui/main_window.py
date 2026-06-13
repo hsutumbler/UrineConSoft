@@ -5,10 +5,23 @@ from PyQt6.QtWidgets import (
     QPushButton, QLabel, QStackedWidget, QFrame,
     QSpacerItem, QSizePolicy, QMessageBox,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
 from config import APP_NAME, DEFAULT_FONT
 from services.auth_service import AuthService
+from services.sync_service import SyncService
+
+
+class SyncThread(QThread):
+    finished_sync = pyqtSignal()
+
+    def run(self):
+        try:
+            SyncService.sync_daily_qc()
+        except Exception as e:
+            print(f"Background sync failed: {e}")
+        finally:
+            self.finished_sync.emit()
 
 
 NAV_GROUPS = [
@@ -55,6 +68,21 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._apply_style()
         self._navigate_first()
+        self._start_background_sync()
+
+    def _start_background_sync(self):
+        self._sync_thread = SyncThread(self)
+        self._sync_thread.finished_sync.connect(self._on_sync_finished)
+        self._sync_thread.start()
+
+    def _on_sync_finished(self):
+        # Refresh current page if it has on_page_show or _load_data
+        if self._current_key and self._current_key in self._page_map:
+            page = self._page_map[self._current_key]
+            if hasattr(page, "_load_data"):
+                page._load_data()
+            elif hasattr(page, "on_page_show"):
+                page.on_page_show()
 
     def _build_ui(self):
         root = QWidget()

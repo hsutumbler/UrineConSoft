@@ -71,9 +71,9 @@ class QCInquiryPage(BasePage):
 
         # Table
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels([
-            "日期", "品管液批號", "Level", "執行人員"
+            "日期", "品管液批號", "Level", "穩定效期", "執行人員"
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -117,9 +117,10 @@ class QCInquiryPage(BasePage):
             dt = str(rec["accepted_at"])[:16]
             lot_num = rec["lot_number"]
             lvl = rec["level_name"]
+            expiry = str(rec.get("expiry_date") or "")
             by = rec["accepted_by_name"]
             
-            vals = [dt, lot_num, lvl, by]
+            vals = [dt, lot_num, lvl, expiry, by]
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(v)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -203,13 +204,15 @@ class QCInquiryPage(BasePage):
             dt = self.table.item(r, 0).text()
             lot_num = self.table.item(r, 1).text()
             lvl = self.table.item(r, 2).text()
-            by = self.table.item(r, 3).text()
+            expiry = self.table.item(r, 3).text()
+            by = self.table.item(r, 4).text()
             
             rows_html += f"""
             <tr>
                 <td style='border: 1px solid #ccc; padding: 4px; text-align: center;'>{dt}</td>
                 <td style='border: 1px solid #ccc; padding: 4px; text-align: center;'>{lot_num}</td>
                 <td style='border: 1px solid #ccc; padding: 4px; text-align: center;'>{lvl}</td>
+                <td style='border: 1px solid #ccc; padding: 4px; text-align: center;'>{expiry}</td>
                 <td style='border: 1px solid #ccc; padding: 4px; text-align: center;'>{by}</td>
             </tr>
             """
@@ -232,6 +235,7 @@ class QCInquiryPage(BasePage):
                         <th>日期</th>
                         <th>批號</th>
                         <th>Level</th>
+                        <th>穩定效期</th>
                         <th>執行人員</th>
                     </tr>
                 </thead>

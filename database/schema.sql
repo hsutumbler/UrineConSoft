@@ -341,3 +341,12 @@ CREATE TABLE IF NOT EXISTS phrase_templates (
     created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT='輸入片語範本';
+
+CREATE TABLE IF NOT EXISTS reagent_batch_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_id INT,
+    status INT,
+    snapshot_data JSON,
+    accepted_by INT,
+    accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

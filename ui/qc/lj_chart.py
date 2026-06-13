@@ -15,7 +15,7 @@ import matplotlib
 
 from config import DEFAULT_FONT
 # 設定中文字型，與主程式一致
-matplotlib.rcParams['font.sans-serif'] = [DEFAULT_FONT, 'PingFang TC', 'Heiti TC', 'Microsoft JhengHei', 'sans-serif']
+matplotlib.rcParams['font.sans-serif'] = ['PingFang HK', 'Microsoft JhengHei', 'Heiti TC', 'Arial', 'sans-serif']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 from ui.base_page import BasePage, PAGE_STYLE, COLORS
@@ -165,12 +165,24 @@ class LJChartPage(BasePage):
         # 取得目前的 active_batch 資訊
         active_batches = {}
         for b in QCBatchService.get_all():
-            if b["is_active"] and b["level_name"] not in active_batches:
-                active_batches[b["level_name"]] = b
+            if b.get("is_active"):
+                for sub in b.get("sub_lots", []):
+                    if sub["level_name"] not in active_batches:
+                        combined = dict(b)
+                        combined.update(sub)
+                        active_batches[sub["level_name"]] = combined
                 
         # 取得所有批號以便過濾
         all_batches = QCBatchService.get_all()
-        batch_id_to_lot = {b["batch_id"]: b["lot_number"] for b in all_batches}
+        batch_id_to_lot = {}
+        all_flattened_batches = []
+        for b in all_batches:
+            for sub in b.get("sub_lots", []):
+                batch_id_to_lot[sub["batch_id"]] = b["lot_number"]
+                combined = dict(b)
+                combined.update(sub)
+                all_flattened_batches.append(combined)
+                
         selected_lots = self.cmb_batch.currentData()
         
         for idx, level_name in enumerate(levels):
@@ -206,7 +218,27 @@ class LJChartPage(BasePage):
             gs = GridSpec(1, 2, width_ratios=[1, 3.5], figure=fig)
             
             if selected_lots:
-                display_batch = next((b for b in all_batches if b["level_name"] == level_name and b["lot_number"] in selected_lots), None)
+                candidates = [b for b in all_flattened_batches if b["level_name"] == level_name and b["lot_number"] in selected_lots]
+                display_batch = None
+                for c in candidates:
+                    ts = TargetSettingService.get_for_batch(iqi["iqi_id"], c["batch_id"])
+                    if ts and (ts.get("tm") is not None or ts.get("semi_target_min") is not None):
+                        display_batch = c
+                        break
+                if not display_batch and candidates:
+                    reagent_name = iqi.get("reagent_name", "").upper()
+                    sed_items = ["RBC", "WBC", "ASC", "BACT", "SQU", "YEA", "HYA", "SPERM", "MUCUS", "CRYS", "CAST"]
+                    is_sed = reagent_name in sed_items
+                    for c in candidates:
+                        lot_prefix = c["lot_number"].upper()[0] if c.get("lot_number") else ""
+                        if is_sed and lot_prefix in ('D', 'S'):
+                            display_batch = c
+                            break
+                        elif not is_sed and lot_prefix == 'C':
+                            display_batch = c
+                            break
+                    if not display_batch:
+                        display_batch = candidates[0]
             else:
                 display_batch = active_batches.get(level_name)
             
@@ -231,10 +263,11 @@ class LJChartPage(BasePage):
                                 fontsize=9, zorder=20)
             annot.set_visible(False)
             
-            results = QCResultService.get_results(iqi["iqi_id"], from_date, to_date)
+            inst_id = self.cmb_inst.currentData()
+            results = QCResultService.get_results(iqi["iqi_id"], from_date, to_date, inst_id)
             
             if selected_lots:
-                results = [r for r in results if batch_id_to_lot.get(r["qc_batch_id"]) in selected_lots]
+                results = [r for r in results if r.get("base_lot_number") in selected_lots]
             
             if not results:
                 ax.text(0.5, 0.5, '此區間無品管資料', ha='center', va='center', transform=ax.transAxes)
@@ -252,27 +285,30 @@ class LJChartPage(BasePage):
             else:
                 scatters, cell_text, num_points = self._draw_semi_quantitative(ax, iqi, results, display_batch)
             
-            # 在左側 ax_stats 畫統計資料 (正式表格形式)
-            table = ax_stats.table(cellText=cell_text, loc='center', cellLoc='center', edges='open', bbox=[0, 0, 1, 1])
-            table.auto_set_font_size(False)
-            table.set_fontsize(7.5)
-            
-            # 第一列加上底色與粗體
-            for (row, col), cell in table.get_celld().items():
-                cell.set_facecolor('none') # 讓儲存格背景透明以顯示 ax_stats 背景
-                # 移除內部 padding，避免字距太開被擠壓
-                cell.PAD = 0.05
+            if cell_text:
+                # 在左側 ax_stats 畫統計資料 (正式表格形式)
+                table = ax_stats.table(cellText=cell_text, loc='center', cellLoc='center', edges='open', bbox=[0, 0, 1, 1])
+                table.auto_set_font_size(False)
+                table.set_fontsize(7.5)
                 
-                if row == 0:
-                    cell.set_facecolor('#E6E2D1')
-                    cell.set_text_props(weight='bold', color='#4A442D', ha='center')
-                else:
-                    if col == 0:
+                # 第一列加上底色與粗體
+                for (row, col), cell in table.get_celld().items():
+                    cell.set_facecolor('none') # 讓儲存格背景透明以顯示 ax_stats 背景
+                    # 移除內部 padding，避免字距太開被擠壓
+                    cell.PAD = 0.05
+                    
+                    if row == 0:
+                        cell.set_facecolor('#E6E2D1')
                         cell.set_text_props(weight='bold', color='#4A442D', ha='center')
-                    elif row == 1:
-                        cell.set_text_props(weight='bold', color='#6B6444', ha='center')
                     else:
-                        cell.set_text_props(ha='center')
+                        if col == 0:
+                            cell.set_text_props(weight='bold', color='#4A442D', ha='center')
+                        elif row == 1:
+                            cell.set_text_props(weight='bold', color='#6B6444', ha='center')
+                        else:
+                            cell.set_text_props(ha='center')
+            else:
+                ax_stats.text(0.5, 0.5, '無統計資料', ha='center', va='center', color='gray')
             
             if num_points > 30:
                 scrollbar.show()
@@ -304,7 +340,8 @@ class LJChartPage(BasePage):
                 'scatters': scatters,
                 'annot': annot,
                 'canvas': canvas,
-                'level_name': level_name
+                'level_name': level_name,
+                'iqi': iqi
             })
 
     def _draw_quantitative(self, ax, iqi, results, active_batch):
@@ -357,6 +394,14 @@ class LJChartPage(BasePage):
                     y_anomaly.append(drawn_v)
                         
                 is_accepted = r.get("is_accepted")
+                if tm is not None and tsd is not None and tsd != 0:
+                    z = round((drawn_v - tm) / tsd, 6)
+                    # 動態依據目前的 target 判斷 1-2S, 1-3S
+                    if abs(z) > 2:
+                        is_accepted = False
+                    else:
+                        is_accepted = True
+
                 rejected = False
                 if is_accepted is False or is_accepted == 0:
                     rejected = True
@@ -435,7 +480,10 @@ class LJChartPage(BasePage):
         # 計算統計資訊
         import numpy as np
         display_batch_id = active_batch["batch_id"] if active_batch else None
-        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id)
+        
+        # Get selected instrument ID from UI
+        instrument_id = self.cmb_inst.currentData()
+        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id, instrument_id)
         
         rname = iqi.get("reagent_name", "")
         dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
@@ -468,8 +516,12 @@ class LJChartPage(BasePage):
         return scatters, cell_text, len(valid_values)
 
     def _draw_semi_quantitative(self, ax, iqi, results, active_batch):
-        # 半定量：將字串轉為對應的等級數值
-        levels = {"Neg": 0, "Trace": 0.5, "1+": 1, "2+": 2, "3+": 3}
+        # 半定量：將字串轉為對應的等級數值，使用等距的整數避免 Y 軸標籤擠在一起
+        rname = iqi.get("reagent_name", "")
+        if rname == "NIT":
+            levels = {"Neg": 0, "Pos": 1}
+        else:
+            levels = {"Neg": 0, "1+": 1, "2+": 2, "3+": 3, "4+": 4}
         y_labels = list(levels.keys())
         y_ticks = list(levels.values())
         
@@ -544,7 +596,7 @@ class LJChartPage(BasePage):
         
         ax.set_yticks(y_ticks)
         ax.set_yticklabels(y_labels)
-        ax.set_ylim(-0.5, len(y_ticks) - 0.5)  # 動態對應所有等級的數量
+        ax.set_ylim(-0.5, len(levels) - 0.5)  # 對應總共 8 個等級
 
         # 標示設定的合理品管範圍
         ts = None
@@ -555,18 +607,22 @@ class LJChartPage(BasePage):
         if ts:
             s_min = ts.get("semi_target_min")
             s_max = ts.get("semi_target_max")
-            if s_min and s_max and s_min in levels and s_max in levels:
-                target_str = f"{s_min} ~ {s_max}" if s_min != s_max else s_min
-                min_val = levels[s_min]
-                max_val = levels[s_max]
-                # 繪製範圍色塊，上下各延伸半格
-                ax.axhspan(min_val - 0.25, max_val + 0.25, color='#E6F2FF', alpha=0.8, zorder=1)
-                ax.axhline(min_val - 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
-                ax.axhline(max_val + 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
+            if s_min and s_max:
+                parsed_min = str(s_min)
+                parsed_max = str(s_max)
+                if parsed_min in levels and parsed_max in levels:
+                    target_str = f"{parsed_min} ~ {parsed_max}" if parsed_min != parsed_max else parsed_min
+                    min_val = levels[parsed_min]
+                    max_val = levels[parsed_max]
+                    # 繪製範圍色塊，上下各延伸半格
+                    ax.axhspan(min_val - 0.25, max_val + 0.25, color='#E6F2FF', alpha=0.8, zorder=1)
+                    ax.axhline(min_val - 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
+                    ax.axhline(max_val + 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
 
         # 統計資訊
         display_batch_id = active_batch["batch_id"] if active_batch else None
-        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id)
+        instrument_id = self.cmb_inst.currentData()
+        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id, instrument_id)
         lot_no = active_batch["lot_number"] if active_batch else "未設定"
         exp_dt = active_batch["expiry_date"].strftime("%Y/%m/%d") if active_batch and active_batch["expiry_date"] else "—"
         
@@ -657,7 +713,7 @@ class LJChartPage(BasePage):
         
         ax.set_yticks(y_ticks)
         ax.set_yticklabels(y_labels)
-        ax.set_ylim(4.25, 8.75)  # Y-axis 4.5 ~ 8.5 with some padding
+        ax.set_ylim(4.5, 8.5)  # Y-axis 4.5 ~ 8.5
 
         ts = None
         if active_batch:
@@ -668,19 +724,23 @@ class LJChartPage(BasePage):
             s_min = ts.get("semi_target_min")
             s_max = ts.get("semi_target_max")
             if s_min and s_max:
-                target_str = f"{s_min} ~ {s_max}" if s_min != s_max else s_min
+                parsed_min = str(s_min)
+                parsed_max = str(s_max)
+                
+                target_str = f"{parsed_min} ~ {parsed_max}" if parsed_min != parsed_max else parsed_min
                 try:
-                    min_val = float(s_min)
-                    max_val = float(s_max)
-                    ax.axhspan(min_val - 0.25, max_val + 0.25, color='#E6F2FF', alpha=0.8, zorder=1)
-                    ax.axhline(min_val - 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
-                    ax.axhline(max_val + 0.25, color='#8DB4E2', linestyle='--', alpha=0.7)
+                    min_val = float(parsed_min)
+                    max_val = float(parsed_max)
+                    ax.axhspan(min_val, max_val, color='#E6F2FF', alpha=0.8, zorder=1)
+                    ax.axhline(min_val, color='#8DB4E2', linestyle='--', alpha=0.7)
+                    ax.axhline(max_val, color='#8DB4E2', linestyle='--', alpha=0.7)
                 except ValueError:
                     pass
 
         # Stats
         display_batch_id = active_batch["batch_id"] if active_batch else None
-        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id)
+        instrument_id = self.cmb_inst.currentData()
+        t_stats = QCResultService.get_total_stats(iqi["iqi_id"], display_batch_id, instrument_id)
         lot_no = active_batch["lot_number"] if active_batch else "未設定"
         exp_dt = active_batch["expiry_date"].strftime("%Y/%m/%d") if active_batch and active_batch["expiry_date"] else "—"
         
@@ -728,7 +788,13 @@ class LJChartPage(BasePage):
                         dt = r.get("entered_at")
                         dt_str = dt.strftime("%m/%d %H:%M") if hasattr(dt, "strftime") else ""
                         val = r.get("measured_value")
-                        if val is None: val = r.get("qualitative_result")
+                        if val is not None:
+                            rname = info['iqi'].get("reagent_name", "")
+                            dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
+                            val = f"{val:.{dec}f}"
+                        else:
+                            val = r.get("qualitative_result")
+                            
                         user = r.get("entered_by_name", "未知")
                         notes = r.get("notes") or "無"
                         
@@ -840,34 +906,39 @@ class LJChartPage(BasePage):
         from services.qc_service import QCBatchService
         batches = QCBatchService.get_all()
         
+        # Group by open_date, expiry_date, and status
         groups = {}
         for b in batches:
-            key = (b["open_date"], b["expiry_date"])
+            key = (b["open_date"], b["expiry_date"], b.get("is_active"), b.get("is_archived"))
             if key not in groups:
                 groups[key] = []
             groups[key].append(b)
             
+        def format_label(group_batches, suffix):
+            active_groups = {}
+            for b in group_batches:
+                active_groups[b["lot_number"]] = True
+            
+            # 排序反轉讓 D 在 C 前面
+            parts = sorted(list(active_groups.keys()), reverse=True)
+            return "/".join(parts) + f" [{suffix}]", sorted(list(set(b["lot_number"] for b in group_batches)))
+
         active_index = -1
-        archived_count = 0
         
-        for idx, ((od, ed), group_batches) in enumerate(groups.items()):
-            lots = sorted(list(set(b["lot_number"] for b in group_batches)))
+        for key, group_batches in groups.items():
             is_active = any(b.get("is_active") for b in group_batches)
             is_archived = any(b.get("is_archived") for b in group_batches)
             
-            label = f"{'/'.join(lots)}"
-            if is_active:
-                label += " [使用中]"
-                active_index = self.cmb_batch.count()
-            elif is_archived:
-                if archived_count > 0:
-                    continue
-                label += " [已退役]"
-                archived_count += 1
+            if is_archived:
+                label, lots = format_label(group_batches, "已退役")
+                self.cmb_batch.addItem(label, lots)
+            elif is_active:
+                label, lots = format_label(group_batches, "使用中")
+                self.cmb_batch.addItem(label, lots)
+                active_index = self.cmb_batch.count() - 1
             else:
-                label += " [待允收]"
-                
-            self.cmb_batch.addItem(label, lots)
+                label, lots = format_label(group_batches, "待允收")
+                self.cmb_batch.addItem(label, lots)
                 
         if active_index >= 0 and self.cmb_batch.count() > 0:
             self.cmb_batch.setCurrentIndex(active_index)
