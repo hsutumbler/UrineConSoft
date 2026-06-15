@@ -4,10 +4,6 @@ from database.connection import DBContext, MSSQLContext
 class SyncService:
     @staticmethod
     def sync_daily_qc(force_start_date=None):
-        """
-        從 MS SQL 撈取新的 DailyQC 資料，寫入本地 MySQL。
-        """
-        # 1. 取得最後同步時間
         last_sync = None
         if force_start_date:
             last_sync = datetime.datetime.strptime(force_start_date, '%Y-%m-%d')
@@ -23,7 +19,6 @@ class SyncService:
 
         print(f"Syncing records from MS SQL since {last_sync}...")
 
-        # 2. 從 MS SQL 抓取新資料
         records_to_sync = []
         with MSSQLContext() as (conn, cursor):
             cursor.execute(
@@ -38,67 +33,94 @@ class SyncService:
             print("No new records to sync.")
             return 0
 
-        # 定性數值對應表
-        def get_qualitative_string(mt_id_str, i_value):
+        def get_qualitative_string(local_mtid, i_value):
             try:
                 val = float(i_value)
             except:
                 return str(i_value)
 
-            # UBG / URO (mtId=32)
-            if mt_id_str == '32':
-                return "Neg" if val < 2.0 else "Pos"
-            
-            # 定量項目 (RBC=1, WBC=2, SG=41, pH=38) 不轉換
-            if mt_id_str in ('1', '2', '38', '41'):
+            # 定量項目不轉換
+            if local_mtid in (1, 2, 12, 13): # SG, pH, RBC, WBC
                 return ""
-
-            # 其餘定性項目
-            if val <= -1.0:
+            
+            # NIT (4) 只接受 Neg, Pos
+            if local_mtid == 4:
+                return "Neg" if val < 1.0 else "Pos"
+            
+            # UBG (8) 映射為 1+, 2+ 等
+            if local_mtid == 8:
+                if val <= -1.0: return "Neg"
+                if val == 1.0 or val == 2.0: return "1+"
+                if val == 3.0: return "2+"
+                if val >= 4.0: return "3+"
                 return "Neg"
-            elif val == 1.0:
-                return "Trace"
-            elif val == 2.0:
-                return "1+"
-            elif val == 3.0:
-                return "2+"
-            elif val == 4.0:
-                return "3+"
-            elif val >= 5.0:
-                return "4+"
+
+            if val <= -1.0: return "Neg"
+            elif val == 1.0: return "1+"
+            elif val == 2.0: return "2+"
+            elif val == 3.0: return "3+"
+            elif val >= 4.0: return "4+"
             return str(val)[:10]
 
-        # 3. 寫入 MySQL 並處理未知批號
         inserted_count = 0
         with DBContext() as (conn, cursor):
-            # 為了避免重複插入相同的資料，先刪除已存在於 MySQL 中且時間 >= last_sync 的記錄
-            # 這樣保證重新抓取 2026-06-01 以來的資料不會發生重複
             cursor.execute("DELETE FROM DailyQC WHERE iDate >= %s", (last_sync,))
 
             for r in records_to_sync:
-                # 檢查 Lot_id 是否存在於 LotTable
-                # 備註: DailyQC 中的 'lot' 其實是 LotTable 中的 'lot_id' (例如 C252881)
-                lot_id_str = r.get('lot') or ''
+                # 依據規定：只接收 77Urine_1 (對應 MSSQL 的 I003, 即 77Urine-dc) 與 77Urine_2 (I004) 的數據
+                mh_id = str(r.get('mhId') or '').strip()
+                if mh_id not in ('I003', 'I004'):
+                    continue
+
+                lot_id_str = str(r.get('lot') or '').upper()
+                if lot_id_str.startswith("CH252880") or lot_id_str.startswith("SED252880") or lot_id_str.startswith("CHC240920"):
+                    continue
+
+                mssql_mtid = str(r.get('mtId') or '').strip()
+                local_mtid = None
+
+                is_sediment = lot_id_str.startswith('D') or lot_id_str.startswith('SED')
+                is_chemistry = lot_id_str.startswith('C')
+
+                if is_sediment:
+                    if mssql_mtid == '1': local_mtid = 12
+                    elif mssql_mtid == '2': local_mtid = 13
+                elif is_chemistry:
+                    if int(mssql_mtid) <= 13:
+                        local_mtid = int(mssql_mtid)
+                    elif mssql_mtid == '41': local_mtid = 1
+                    elif mssql_mtid == '38': local_mtid = 2
+                    elif mssql_mtid == '36': local_mtid = 5
+                    elif mssql_mtid == '35': local_mtid = 6
+                    elif mssql_mtid == '33': local_mtid = 7
+                    elif mssql_mtid == '37': local_mtid = 10
+                    elif mssql_mtid == '40': local_mtid = 3
+                    elif mssql_mtid == '39': local_mtid = 4
+                    elif mssql_mtid == '31': local_mtid = 9
+                    elif mssql_mtid == '32': local_mtid = 8
+                    elif mssql_mtid == '34': local_mtid = 11
+
+                if not local_mtid:
+                    local_mtid = int(mssql_mtid)
+
+                r['mtId'] = local_mtid
+
                 if lot_id_str:
                     cursor.execute("SELECT lot_id FROM LotTable WHERE lot_id=%s", (lot_id_str,))
                     if not cursor.fetchone():
-                        # 新建待允收批號
-                        # 解析出 base_lot (例如 C252880) 與 level (例如 1)
                         if lot_id_str[-1] in ('1', '2'):
                             base_lot = lot_id_str[:-1] + '0'
                             level = lot_id_str[-1]
                         else:
                             base_lot = lot_id_str
                             level = '1'
-
                         cursor.execute(
                             "INSERT INTO LotTable (lot, lot_id, iUser, lot_Level) VALUES (%s, %s, 'System_Sync', %s)",
                             (base_lot, lot_id_str, level)
                         )
 
-                check_type_str = get_qualitative_string(str(r.get('mtId')), r.get('iValue', 0))
+                check_type_str = get_qualitative_string(local_mtid, r.get('iValue', 0))
 
-                # Insert
                 cursor.execute("""
                     INSERT INTO DailyQC (
                         mhId, cId, mtId, iValue, iDate, iUser, lot, ltId,

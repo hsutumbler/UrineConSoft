@@ -88,7 +88,7 @@ class ReagentInquiryPage(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels([
-            "日期", "原批號", "本試劑批號", "執行人員"
+            "允收日期", "原批號", "本試劑批號", "執行人員"
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -266,7 +266,7 @@ class ReagentInquiryPage(QWidget):
             <table>
                 <thead>
                     <tr>
-                        <th>日期</th>
+                        <th>允收日期</th>
                         <th>原批號</th>
                         <th>本試劑批號</th>
                         <th>執行人員</th>

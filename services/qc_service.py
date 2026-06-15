@@ -459,6 +459,24 @@ class QCBatchService:
             return mother_lot
 
     @staticmethod
+    def activate_and_retire_old(mother_lot: str, acceptance_reason: str = None):
+        if not mother_lot: return
+        prefix = mother_lot[0].upper()
+        with DBContext() as (_, cur):
+            # Archive old active lots of the same prefix
+            cur.execute(
+                "UPDATE LotTable SET is_active=0, is_archived=1 "
+                "WHERE is_active=1 AND UPPER(lot) LIKE %s AND lot != %s",
+                (f"{prefix}%", mother_lot)
+            )
+            # Activate the new lot and set its acceptance status and reason
+            cur.execute(
+                "UPDATE LotTable SET is_active=1, is_archived=0, acceptance_status='accepted', acceptance_reason=%s "
+                "WHERE lot=%s",
+                (acceptance_reason, mother_lot)
+            )
+
+    @staticmethod
     def toggle_active(mother_lot: str, is_active: bool):
         with DBContext() as (_, cur):
             if is_active:
@@ -655,12 +673,14 @@ class QCResultService:
             query = (
                 "SELECT d.dqcId AS result_id, d.iDate AS result_date, d.iValue AS measured_value, "
                 "d.lot AS qc_batch_id, b.lot AS base_lot_number, d.Check_Type AS qualitative_result, "
-                "CASE WHEN d.sdFlag=0 THEN 1 ELSE 0 END AS is_accepted, '' AS westgard_flag, "
+                "CASE WHEN d.sdFlag=0 THEN 1 ELSE 0 END AS is_accepted_raw, '' AS westgard_flag, "
                 "1 AS source, IFNULL(n.notes, '') AS notes, d.sysTime AS entered_at, d.iUser AS entered_by_name, "
-                "EXISTS(SELECT 1 FROM QCaberrant a WHERE a.dqcId = d.dqcId) AS has_anomaly "
+                "EXISTS(SELECT 1 FROM QCaberrant a WHERE a.dqcId = d.dqcId) AS has_anomaly, "
+                "CASE WHEN re.mhitem='pH' THEN 3 WHEN re.itemtype='Q' THEN 1 ELSE 2 END AS param_type "
                 "FROM DailyQC d "
                 "LEFT JOIN DailyQC_notes n ON d.dqcId = n.dqcId "
                 "JOIN LotTable b ON b.lot_id = d.lot AND b.lot_Level=%s "
+                "JOIN MhItem re ON d.mtId = re.mtId "
                 "WHERE d.mtId=%s AND d.iDate >= %s AND d.iDate <= %s "
             )
             params = [level_id, reagent_id, f"{from_date} 00:00:00", f"{to_date} 23:59:59"]
@@ -672,7 +692,50 @@ class QCResultService:
             query += "ORDER BY d.iDate ASC, d.sysTime ASC"
             
             cur.execute(query, params)
-            return cur.fetchall()
+            rows = cur.fetchall()
+
+            # 動態重新計算 is_accepted，覆寫儀器傳來的 sdFlag
+            from services.qc_service import TargetSettingService
+            for r in rows:
+                r["is_accepted"] = r["is_accepted_raw"]
+                
+                # Fetch target for this specific lot
+                cur.execute(
+                    "SELECT `Range` AS semi_target_min, `Range` AS semi_target_max, tMean, tSd, TEA "
+                    "FROM LotTest WHERE mtId=%s AND lot=%s ORDER BY iDateTime DESC LIMIT 1",
+                    (reagent_id, r["qc_batch_id"])
+                )
+                tgt = TargetSettingService._parse_semi_range(cur.fetchone())
+                
+                if tgt:
+                    if r["param_type"] == 2 or r["param_type"] == 3: # 文字或數值半定量
+                        qual_val = r["qualitative_result"] if r["param_type"] == 2 else r["measured_value"]
+                        if qual_val is not None and tgt.get("semi_target_min") is not None:
+                            try:
+                                if r["param_type"] == 3: # pH等數值半定量
+                                    val = float(qual_val)
+                                    tmin = float(tgt["semi_target_min"])
+                                    tmax = float(tgt.get("semi_target_max", tgt["semi_target_min"]))
+                                    r["is_accepted"] = 1 if (tmin <= val <= tmax) else 0
+                                else: # 文字半定量
+                                    tmin_str = str(tgt["semi_target_min"])
+                                    tmax_str = str(tgt.get("semi_target_max", tmin_str))
+                                    qual_str = str(qual_val)
+                                    if tmin_str == tmax_str:
+                                        r["is_accepted"] = 1 if qual_str == tmin_str else 0
+                                    else:
+                                        levels_map = {"Neg": 0, "Trace": 1, "1+": 2, "2+": 3, "3+": 4, "4+": 5, "Pos": 6}
+                                        if qual_str in levels_map and tmin_str in levels_map and tmax_str in levels_map:
+                                            r["is_accepted"] = 1 if levels_map[tmin_str] <= levels_map[qual_str] <= levels_map[tmax_str] else 0
+                                        else:
+                                            r["is_accepted"] = 1 if qual_str == tmin_str else 0
+                            except:
+                                pass
+                    elif r["param_type"] == 1:
+                        if tgt.get("tm") is not None and tgt.get("tsd") is not None and tgt.get("tsd") != 0:
+                            z = (float(r["measured_value"]) - float(tgt["tm"])) / float(tgt["tsd"])
+                            r["is_accepted"] = 1 if abs(z) <= 2 else 0
+            return rows
 
     @staticmethod
     def update_note(result_id: int, notes: str):

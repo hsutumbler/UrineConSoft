@@ -69,10 +69,15 @@ def init_mock_db():
         lot_id VARCHAR(40),
         lot_Level VARCHAR(20),
         QC_date DATETIME,
+        expiry_date DATETIME,
         Writedate DATETIME,
         iUser VARCHAR(40),
         lot_type VARCHAR(10),
-        cName VARCHAR(10)
+        cName VARCHAR(10),
+        is_active TINYINT(1) DEFAULT 0,
+        is_archived TINYINT(1) DEFAULT 0,
+        acceptance_status VARCHAR(20) DEFAULT 'pending',
+        acceptance_reason VARCHAR(255) DEFAULT NULL
     );
 
     CREATE TABLE LotTest (

@@ -477,6 +477,20 @@ class LJChartPage(BasePage):
             # Y 軸以 TM 為中心，範圍至 TM ± 3.5SD
             ax.set_ylim(tm - 3.5*tsd, tm + 3.5*tsd)
             
+            # 設定 Y 軸刻度為 Mean ± n*SD
+            yticks = [
+                tm - 3*tsd, tm - 2*tsd, tm - tsd, 
+                tm, 
+                tm + tsd, tm + 2*tsd, tm + 3*tsd
+            ]
+            ax.set_yticks(yticks)
+            
+            # 格式化 Y 軸標籤 (RBC/WBC 取小數第1位，其他取小數第2位)
+            rname = iqi.get("reagent_name", "")
+            dec = 3 if rname == "SG" else (1 if rname in ("RBC", "WBC") else 2)
+            yticklabels = [f"{yt:.{dec}f}" for yt in yticks]
+            ax.set_yticklabels(yticklabels)
+            
         # 計算統計資訊
         import numpy as np
         display_batch_id = active_batch["batch_id"] if active_batch else None
@@ -521,7 +535,7 @@ class LJChartPage(BasePage):
         if rname == "NIT":
             levels = {"Neg": 0, "Pos": 1}
         else:
-            levels = {"Neg": 0, "1+": 1, "2+": 2, "3+": 3, "4+": 4}
+            levels = {"Neg": 0, "Trace": 1, "1+": 2, "2+": 3, "3+": 4, "4+": 5}
         y_labels = list(levels.keys())
         y_ticks = list(levels.values())
         

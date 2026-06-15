@@ -88,7 +88,7 @@ class InquiryService:
         batches = QCBatchService.get_all()
         results = []
         for b in batches:
-            if b["acceptance_status"] not in ("1", "2"):
+            if str(b["acceptance_status"]) not in ("1", "2", "accepted"):
                 continue
                 
             dt = b["created_at"].date() if b["created_at"] else b["open_date"].date() if b["open_date"] else None
@@ -98,9 +98,13 @@ class InquiryService:
                 if lot_number and lot_number != "全部" and b["lot_number"] != lot_number:
                     continue
                     
-                b["accepted_at"] = b["created_at"] or b["open_date"]
-                b["accepted_by_name"] = b["created_by_name"]
-                results.append(b)
+                for sub in b.get("sub_lots", []):
+                    rec = dict(b)
+                    rec["level_name"] = sub["level_name"]
+                    rec["batch_id"] = sub["batch_id"]
+                    rec["accepted_at"] = b["created_at"] or b["open_date"]
+                    rec["accepted_by_name"] = b["created_by_name"]
+                    results.append(rec)
                 
         return results
 
@@ -200,13 +204,14 @@ class InquiryService:
             
         settings_map = {}
         for s in settings:
-            key = (s["mtId"], s["lot"])
+            key = (str(s["mtId"]), s["lot"].upper() if s["lot"] else "")
             settings_map[key] = s
 
         # Group by item
         stats_map = {}
         for row in results:
-            key = (row["reagent_id"], row["lot_number"])
+            lot_upper = row["lot_number"].upper() if row["lot_number"] else ""
+            key = (str(row["reagent_id"]), lot_upper)
             if key not in stats_map:
                 stats_map[key] = {
                     "reagent_name": row["reagent_name"],
@@ -218,14 +223,20 @@ class InquiryService:
                     "values": [],
                     "accepts": 0,
                     "rejects": 0,
-                    "target": settings_map.get((row["reagent_id"], row["lot_number"]), {})
+                    "target": settings_map.get(key, {})
                 }
             
             stats_map[key]["n"] += 1
             if row["param_type"] == 1 and row["measured_value"] is not None:
                 stats_map[key]["values"].append(float(row["measured_value"]))
             
-            if row["is_accepted"]:
+            # For qualitative parameters, sdFlag=0 is often not used, they usually have sdFlag < 0.
+            # We treat them as accepted unless explicitly flagged with a positive sdFlag (meaning some error/SD violation).
+            is_acc = row["is_accepted"]
+            if row["param_type"] != 1:
+                is_acc = True
+                
+            if is_acc:
                 stats_map[key]["accepts"] += 1
             else:
                 stats_map[key]["rejects"] += 1

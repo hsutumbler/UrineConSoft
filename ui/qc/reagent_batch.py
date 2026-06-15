@@ -35,10 +35,7 @@ class ReagentBatchPage(BasePage):
         self.btn_accept.setEnabled(False)
         self.btn_accept.clicked.connect(self._run_acceptance)
 
-        self.btn_activate = QPushButton("✅ 設為使用中")
-        self.btn_activate.setEnabled(False)
-        self.btn_activate.clicked.connect(self._activate_selected)
-
+        
         self.btn_delete = QPushButton("🗑️ 刪除批號")
         self.btn_delete.setStyleSheet("color: #D32F2F;")
         self.btn_delete.setEnabled(False)
@@ -46,7 +43,6 @@ class ReagentBatchPage(BasePage):
 
         toolbar.addWidget(btn_add)
         toolbar.addWidget(self.btn_accept)
-        toolbar.addWidget(self.btn_activate)
         toolbar.addWidget(self.btn_delete)
         toolbar.addStretch()
         self.content_layout.addLayout(toolbar)
@@ -120,16 +116,16 @@ class ReagentBatchPage(BasePage):
         self._on_selection()
 
     def _on_selection(self):
-        row = self.table.currentRow()
-        has = row >= 0
-        self.btn_activate.setEnabled(has)
-        self.btn_accept.setEnabled(has)
+        has = self.table.currentRow() >= 0
+        b = self._get_selected() if has else None
+        
+        is_archived = b.get("is_archived") if b else False
+        
+        self.btn_accept.setEnabled(has and not is_archived)
         
         can_delete = False
-        if has:
-            b = self._get_selected()
-            if b and not b.get("is_active") and not b.get("is_archived"):
-                can_delete = True
+        if b and not b.get("is_active") and not is_archived:
+            can_delete = True
         self.btn_delete.setEnabled(can_delete)
 
     def _get_selected(self):
@@ -150,14 +146,6 @@ class ReagentBatchPage(BasePage):
             )
             self._load()
 
-    def _activate_selected(self):
-        b = self._get_selected()
-        if not b:
-            return
-        if not self.confirm("確認", f"將批號 {b['lot_number']} 設為目前使用中？", default_yes=True):
-            return
-        ReagentBatchService.set_active(b["batch_id"])
-        self._load()
 
     def _delete_batch(self):
         b = self._get_selected()

@@ -1,13 +1,18 @@
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog, QMessageBox,
-    QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QComboBox, QTabWidget, QDialog
-)
+import traceback
+from datetime import date
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+                             QTableWidget, QTableWidgetItem, QHeaderView,
+                             QPushButton, QMessageBox, QGroupBox, QTabWidget,
+                             QDateEdit, QComboBox, QDialog, QFileDialog)
 from PyQt6.QtCore import Qt, QDate
-from ui.base_page import PAGE_STYLE, BasePage, COLORS
-from services.inquiry_service import InquiryService
-from services.qc_service import MasterService
+from PyQt6.QtGui import QTextDocument, QPageSize, QPageLayout
+from PyQt6.QtPrintSupport import QPrinter
 
-class ReportDetailDialog(QDialog):
+from ui.base_page import COLORS
+from ui.base_page import BasePage
+from services.inquiry_service import InquiryService
+
+class QCReportDialog(QDialog):
     def __init__(self, parent, user, d_from, d_to, inst_id, lot_number, inst_name, expiry_date=""):
         super().__init__(parent)
         self.user = user
@@ -17,9 +22,16 @@ class ReportDetailDialog(QDialog):
         self.lot_number = lot_number
         self.inst_name = inst_name
         self.expiry_date = expiry_date
-        self.setWindowTitle(f"報表檢視 — {inst_name} ({lot_number})")
-        self.setMinimumSize(1000, 600)
-        self.setStyleSheet(PAGE_STYLE)
+        
+        self.current_records = []
+        
+        self.setWindowTitle("報表檢視 — " + f"{self.inst_name} ({self.lot_number})")
+        self.resize(1000, 750)
+        
+        self.lot_prefix = self.lot_number.upper()[0] if self.lot_number else ""
+        self.show_qual = self.lot_prefix != 'D'
+        self.show_quant = True
+        
         self._build_ui()
         self._load_data()
 
@@ -32,44 +44,88 @@ class ReportDetailDialog(QDialog):
         top.addWidget(title)
         top.addStretch()
         
-
-        
         layout.addLayout(top)
 
-        self.tabs = QTabWidget()
+        self.level_tabs = {}
         
-        # Qualitative/Semi-quantitative (定性/半定量)
-        self.tab_qual = QWidget()
-        layout_qual = QVBoxLayout(self.tab_qual)
-        self.table_qual = QTableWidget()
-        self.table_qual.setColumnCount(5)
-        self.table_qual.setHorizontalHeaderLabels(["項目", "Level", "N", "合格數", "不合格數"])
-        self.table_qual.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table_qual.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table_qual.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        layout_qual.addWidget(self.table_qual)
+        if not self.show_qual:
+            page = QWidget()
+            page_layout = QVBoxLayout(page)
+            for lvl in ["1", "2"]:
+                lvl_label = QLabel(f"Level {lvl}")
+                lvl_label.setStyleSheet("font-weight: bold; font-size: 14px; margin-top: 5px;")
+                page_layout.addWidget(lvl_label)
+                
+                tables = {}
+                quant_group = QWidget()
+                quant_layout = QVBoxLayout(quant_group)
+                quant_layout.setContentsMargins(0, 0, 0, 0)
+                table_quant = QTableWidget()
+                table_quant.setColumnCount(11)
+                table_quant.setHorizontalHeaderLabels([
+                    "項目", "N", "TM", "AM", "TSD", "ASD", "CV%", "Bias%", "TE%", "TEa%", "評估"
+                ])
+                table_quant.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+                table_quant.verticalHeader().setVisible(False)
+                table_quant.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+                table_quant.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+                quant_layout.addWidget(table_quant)
+                
+                page_layout.addWidget(quant_group, 1)
+                tables['quant'] = table_quant
+                self.level_tabs[lvl] = tables
+                
+            note_quant = QLabel("備註：TM=Target Mean, AM=Actual Mean, TSD=Target SD, ASD=Actual SD")
+            note_quant.setObjectName("page_subtitle")
+            page_layout.addWidget(note_quant)
+            layout.addWidget(page)
+        else:
+            self.tabs = QTabWidget()
+            for lvl in ["1", "2"]:
+                tab = QWidget()
+                t_layout = QVBoxLayout(tab)
+                
+                tables = {}
+                qual_group = QWidget()
+                qual_layout = QVBoxLayout(qual_group)
+                qual_layout.setContentsMargins(0, 0, 0, 0)
+                table_qual = QTableWidget()
+                table_qual.setColumnCount(4)
+                table_qual.setHorizontalHeaderLabels(["項目", "N", "合格數", "不合格數"])
+                table_qual.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+                table_qual.verticalHeader().setVisible(False)
+                table_qual.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+                table_qual.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+                qual_layout.addWidget(table_qual)
+                t_layout.addWidget(qual_group, 3 if self.show_quant else 1)
+                tables['qual'] = table_qual
+                
+                if self.show_quant:
+                    quant_group = QWidget()
+                    quant_layout = QVBoxLayout(quant_group)
+                    quant_layout.setContentsMargins(0, 0, 0, 0)
+                    table_quant = QTableWidget()
+                    table_quant.setColumnCount(11)
+                    table_quant.setHorizontalHeaderLabels([
+                        "項目", "N", "TM", "AM", "TSD", "ASD", "CV%", "Bias%", "TE%", "TEa%", "評估"
+                    ])
+                    table_quant.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+                    table_quant.verticalHeader().setVisible(False)
+                    table_quant.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+                    table_quant.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+                    quant_layout.addWidget(table_quant)
+                    
+                    note_quant = QLabel("備註：TM=Target Mean, AM=Actual Mean, TSD=Target SD, ASD=Actual SD")
+                    note_quant.setObjectName("page_subtitle")
+                    quant_layout.addWidget(note_quant)
+                    t_layout.addWidget(quant_group, 1)
+                    tables['quant'] = table_quant
+                    
+                self.level_tabs[lvl] = tables
+                self.tabs.addTab(tab, f"Level {lvl}")
+                
+            layout.addWidget(self.tabs)
         
-        # Quantitative (定量)
-        self.tab_quant = QWidget()
-        layout_quant = QVBoxLayout(self.tab_quant)
-        self.table_quant = QTableWidget()
-        self.table_quant.setColumnCount(12)
-        self.table_quant.setHorizontalHeaderLabels([
-            "項目", "Level", "N", "TM", "AM", "TSD", "ASD", "CV%", "Bias%", "TE%", "TEa%", "評估"
-        ])
-        self.table_quant.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table_quant.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table_quant.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        layout_quant.addWidget(self.table_quant)
-        
-        note_quant = QLabel("備註：TM=Target Mean, AM=Actual Mean, TSD=Target SD, ASD=Actual SD")
-        note_quant.setObjectName("page_subtitle")
-        layout_quant.addWidget(note_quant)
-        
-        self.tabs.addTab(self.tab_qual, "定性 / 半定量")
-        self.tabs.addTab(self.tab_quant, "定量")
-        
-        layout.addWidget(self.tabs)        
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         btn_print = QPushButton("🖨️ 列印")
@@ -87,19 +143,27 @@ class ReportDetailDialog(QDialog):
         records = InquiryService.get_qc_reports(self.d_from, self.d_to, self.inst_id, self.lot_number)
         self.current_records = records
         
-        self.table_quant.setRowCount(0)
-        self.table_qual.setRowCount(0)
+        for tables in self.level_tabs.values():
+            if 'qual' in tables: tables['qual'].setRowCount(0)
+            if 'quant' in tables: tables['quant'].setRowCount(0)
         
         for rec in self.current_records:
             param = rec["reagent_name"]
-            lvl = rec["level_name"]
+            lvl_name = rec["level_name"]
+            lvl = "1" if "1" in str(lvl_name) else "2"
+            
+            if lvl not in self.level_tabs:
+                continue
+                
+            tables = self.level_tabs[lvl]
             n = str(rec["n"])
             acc = str(rec["accepts"])
             rej = str(rec["rejects"])
             
-            if rec["param_type"] == 1:
-                r = self.table_quant.rowCount()
-                self.table_quant.insertRow(r)
+            if rec["param_type"] == 1 and 'quant' in tables:
+                t = tables['quant']
+                r = t.rowCount()
+                t.insertRow(r)
                 dec = 3 if param == "SG" else (1 if param in ("RBC", "WBC") else 2)
                 
                 tm = f"{rec['tm']:.{dec}f}" if rec.get('tm') is not None else "—"
@@ -116,37 +180,28 @@ class ReportDetailDialog(QDialog):
                 else:
                     eval_res = "—"
 
-                vals = [param, lvl, n, tm, mean, tsd, sd, cv, bias, te, tea, eval_res]
+                vals = [param, n, tm, mean, tsd, sd, cv, bias, te, tea, eval_res]
                 for c, v in enumerate(vals):
                     item = QTableWidgetItem(v)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                    if c == 11 and eval_res == "不合格":
+                    if c == 10 and eval_res == "不合格":
                         item.setForeground(Qt.GlobalColor.red)
-                    self.table_quant.setItem(r, c, item)
-            else:
-                r = self.table_qual.rowCount()
-                self.table_qual.insertRow(r)
+                    t.setItem(r, c, item)
+            elif rec["param_type"] != 1 and 'qual' in tables:
+                t = tables['qual']
+                r = t.rowCount()
+                t.insertRow(r)
                 
-                vals = [param, lvl, n, acc, rej]
+                vals = [param, n, acc, rej]
                 for c, v in enumerate(vals):
                     item = QTableWidgetItem(v)
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                    self.table_qual.setItem(r, c, item)
+                    t.setItem(r, c, item)
 
     def _print_report(self):
-        from PyQt6.QtPrintSupport import QPrinter
-        from PyQt6.QtGui import QTextDocument, QPageLayout
-        from PyQt6.QtCore import QDate
-        from PyQt6.QtWidgets import QFileDialog
-        
-        if self.table_qual.rowCount() == 0 and self.table_quant.rowCount() == 0:
-            QMessageBox.warning(self, "無資料", "目前表格沒有資料可以列印。")
-            return
-            
-        title = "尿液品管定量與半定量月報表"
-        group = "鏡檢"
-        stat_date = f"{self.d_from.strftime('%Y-%m-%d')} ~ {self.d_to.strftime('%Y-%m-%d')}"
-        doc_id = "LL-Q010/04-D"
+        doc_id = "FM-LA-38-03"
+        group = "鏡檢組"
+        stat_date = f"{self.d_from.replace('-', '/')} - {self.d_to.replace('-', '/')}"
         
         print_date = QDate.currentDate().toString("yyyy-MM-dd")
         
@@ -167,65 +222,73 @@ class ReportDetailDialog(QDialog):
             </style>
         </head>
         <body>
-            <div class="title">{title}</div>
-            <div class="doc-id">文件編號：{doc_id}</div>
-            <div class="info">
-                <div>組別：{group}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;統計日期：{stat_date}</div>
-                <div style="margin-top: 5px;">品管液批號：{self.lot_number}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{self.expiry_date}</div>
-            </div>
         """
         
-        if self.table_qual.rowCount() > 0:
-            html += '<div class="section-title">定性 / 半定量</div>'
-            html += '<table class="data-table" width="100%"><thead><tr>'
-            cols = self.table_qual.columnCount()
-            for c in range(cols):
-                html += f"<th>{self.table_qual.horizontalHeaderItem(c).text()}</th>"
-            html += "</tr></thead><tbody>"
-            for r in range(self.table_qual.rowCount()):
-                html += "<tr>"
+        for i, lvl in enumerate(["1", "2"]):
+            tables = self.level_tabs[lvl]
+            if i > 0:
+                html += '<div style="page-break-before: always;"></div>'
+                
+            html += f"""
+                <div class="title">品管報表</div>
+                <div class="doc-id">文件編號：{doc_id}</div>
+                <div class="info">
+                    <div>統計日期：{stat_date}</div>
+                    <div style="margin-top: 5px;">組別：{group}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;儀器：{self.inst_name}</div>
+                    <div style="margin-top: 5px;">品管液批號：{self.lot_number}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Level：{lvl}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{self.expiry_date}</div>
+                </div>
+            """
+            
+            if 'qual' in tables and tables['qual'].rowCount() > 0:
+                html += '<div class="section-title">定性 / 半定量</div>'
+                html += '<table class="data-table" width="100%"><thead><tr>'
+                cols = tables['qual'].columnCount()
                 for c in range(cols):
-                    item = self.table_qual.item(r, c)
-                    val = item.text() if item else ""
-                    if "不合格" in val:
-                        html += f"<td><span style='color: red;'>{val}</span></td>"
-                    else:
-                        html += f"<td>{val}</td>"
-                html += "</tr>"
-            html += "</tbody></table>"
+                    html += f"<th>{tables['qual'].horizontalHeaderItem(c).text()}</th>"
+                html += "</tr></thead><tbody>"
+                for r in range(tables['qual'].rowCount()):
+                    html += "<tr>"
+                    for c in range(cols):
+                        item = tables['qual'].item(r, c)
+                        val = item.text() if item else ""
+                        if "不合格" in val:
+                            html += f"<td><span style='color: red;'>{val}</span></td>"
+                        else:
+                            html += f"<td>{val}</td>"
+                    html += "</tr>"
+                html += "</tbody></table>"
 
-        if self.table_quant.rowCount() > 0:
-            html += '<div class="section-title">定量</div>'
-            html += '<table class="data-table" width="100%"><thead><tr>'
-            cols = self.table_quant.columnCount()
-            for c in range(cols):
-                html += f"<th>{self.table_quant.horizontalHeaderItem(c).text()}</th>"
-            html += "</tr></thead><tbody>"
-            for r in range(self.table_quant.rowCount()):
-                html += "<tr>"
+            if 'quant' in tables and tables['quant'].rowCount() > 0:
+                html += '<div class="section-title">定量</div>'
+                html += '<table class="data-table" width="100%"><thead><tr>'
+                cols = tables['quant'].columnCount()
                 for c in range(cols):
-                    item = self.table_quant.item(r, c)
-                    val = item.text() if item else ""
-                    if "不合格" in val:
-                        html += f"<td><span style='color: red;'>{val}</span></td>"
-                    else:
-                        html += f"<td>{val}</td>"
-                html += "</tr>"
-            html += "</tbody></table>"
+                    html += f"<th>{tables['quant'].horizontalHeaderItem(c).text()}</th>"
+                html += "</tr></thead><tbody>"
+                for r in range(tables['quant'].rowCount()):
+                    html += "<tr>"
+                    for c in range(cols):
+                        item = tables['quant'].item(r, c)
+                        val = item.text() if item else ""
+                        if "不合格" in val:
+                            html += f"<td><span style='color: red;'>{val}</span></td>"
+                        else:
+                            html += f"<td>{val}</td>"
+                    html += "</tr>"
+                html += "</tbody></table>"
+                html += '<div class="footer">備註：TM=Target Mean, AM=Actual Mean, TSD=Target SD, ASD=Actual SD</div>'
+                
+            html += f'<div class="footer">列印日期：{print_date}</div>'
+            html += """
+                <table width="100%" border="0" style="margin-top: 40px;">
+                    <tr>
+                        <td width="50%" align="left" style="border: none; font-size: 12pt;">組長：</td>
+                        <td width="50%" align="left" style="border: none; font-size: 12pt;">技術主任：</td>
+                    </tr>
+                </table>
+            """
             
-        html += f'<div class="footer">列印日期：{print_date}</div>'
-        if self.table_quant.rowCount() > 0:
-            html += '<div class="footer">備註：TM=Target Mean, AM=Actual Mean, TSD=Target SD, ASD=Actual SD</div>'
-            
-        html += """
-            <table width="100%" border="0" style="margin-top: 40px;">
-                <tr>
-                    <td width="50%" align="left" style="border: none; font-size: 12pt;">組長：</td>
-                    <td width="50%" align="left" style="border: none; font-size: 12pt;">技術主任：</td>
-                </tr>
-            </table>
-        </body></html>
-        """
+        html += "</body></html>"
         
         path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"品管報表_{self.lot_number}.pdf", "PDF (*.pdf)")
         if not path: return
@@ -233,7 +296,6 @@ class ReportDetailDialog(QDialog):
         doc = QTextDocument()
         doc.setHtml(html)
         
-        from PyQt6.QtGui import QPageSize
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
         printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
         printer.setOutputFileName(path)
@@ -248,16 +310,11 @@ class ReportInquiryPage(BasePage):
     def __init__(self, user: dict, is_subpage=False):
         super().__init__("品管報表", "列印或匯出 L-J 報表與統計資料", user)
         self.is_subpage = is_subpage
-        self.setStyleSheet(PAGE_STYLE)
         self._build_ui()
 
     def _build_ui(self):
-        # We only use this page embedded in ComprehensiveInquiryPage, 
-        # so filter UI is not added here if is_subpage is True.
-        # But we still build it just in case.
-        filter_layout = QVBoxLayout()
-        # (Omitted filter building since it's only used as subpage)
-
+        # When embedded in ComprehensiveInquiryPage, the filters are provided by the parent.
+        # We display the search results (lots) in a table.
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["儀器", "批號", "Level", "穩定效期"])
@@ -280,15 +337,13 @@ class ReportInquiryPage(BasePage):
             }}
         """)
 
-        if not self.is_subpage:
-            self.content_layout.addWidget(self.table)
-        else:
-            self.layout().addWidget(self.table)
+        # Add the table to the content layout provided by BasePage
+        self.content_layout.addWidget(self.table)
 
-    def execute_query(self, d_from, d_to, inst, lot):
-        # 'lot' is ignored since we just want all batches in the date range
-        self.d_from = d_from
-        self.d_to = d_to
+    def execute_query(self, d_from, d_to, inst, lot=None):
+        self.d_from_str = d_from.strftime("%Y-%m-%d") if hasattr(d_from, "strftime") else d_from
+        self.d_to_str = d_to.strftime("%Y-%m-%d") if hasattr(d_to, "strftime") else d_to
+
         inst_id = inst["instrument_id"] if inst else None
         
         batches = InquiryService.get_qc_report_batches(d_from, d_to, inst_id)
@@ -319,7 +374,7 @@ class ReportInquiryPage(BasePage):
     def _on_view_clicked(self):
         selected = self.table.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "提示", "請先選擇一個批號。")
+            QMessageBox.warning(self, "提示", "請先從表格中選擇一個批號。")
             return
             
         row = selected[0].row()
@@ -329,16 +384,17 @@ class ReportInquiryPage(BasePage):
         b = item.data(Qt.ItemDataRole.UserRole)
         if not b: return
         
+        exp_date = b.get("expiry_date", "")
+        if exp_date and hasattr(exp_date, "strftime"):
+            exp_date = exp_date.strftime("%Y/%m/%d")
+            
         try:
-            exp_date = b.get("expiry_date", "")
-            if exp_date and hasattr(exp_date, "strftime"):
-                exp_date = exp_date.strftime("%Y/%m/%d")
-            dlg = ReportDetailDialog(self, self.user, self.d_from, self.d_to, b["instrument_id"], b["lot_number"], b["instrument_name"], exp_date)
-            dlg.exec()
+            dialog = QCReportDialog(self, self.user, self.d_from_str, self.d_to_str, b["instrument_id"], b["lot_number"], b["instrument_name"], exp_date)
+            dialog.exec()
         except Exception as e:
-            import traceback
             err_msg = traceback.format_exc()
-            QMessageBox.critical(self, "發生錯誤", f"開啟報表檢視時發生錯誤:\\n{err_msg}")
+            QMessageBox.critical(self, "發生錯誤", f"開啟報表檢視時發生錯誤:\n{err_msg}")
+
 
 
     def _print_report(self):

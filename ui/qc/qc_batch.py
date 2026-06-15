@@ -39,9 +39,6 @@ class QCBatchPage(BasePage):
         self.btn_accept.setEnabled(False)
         self.btn_accept.clicked.connect(self._run_acceptance)
 
-        self.btn_activate = QPushButton("✅ 設為使用中")
-        self.btn_activate.setEnabled(False)
-        self.btn_activate.clicked.connect(self._activate_selected)
         
         self.btn_delete = QPushButton("🗑️ 刪除批號")
         self.btn_delete.setEnabled(False)
@@ -51,7 +48,6 @@ class QCBatchPage(BasePage):
         toolbar.addWidget(btn_add)
         toolbar.addWidget(self.btn_target)
         toolbar.addWidget(self.btn_accept)
-        toolbar.addWidget(self.btn_activate)
         toolbar.addWidget(self.btn_delete)
         toolbar.addStretch()
         self.content_layout.addLayout(toolbar)
@@ -136,11 +132,20 @@ class QCBatchPage(BasePage):
         self._on_selection()
 
     def _on_selection(self):
-        has = self.table.currentRow() >= 0
-        self.btn_activate.setEnabled(has)
-        self.btn_accept.setEnabled(has)
-        self.btn_target.setEnabled(has)
-        self.btn_delete.setEnabled(has)
+        row = self.table.currentRow()
+        has = row >= 0
+        if not has:
+            self.btn_accept.setEnabled(False)
+            self.btn_target.setEnabled(False)
+            self.btn_delete.setEnabled(False)
+            return
+
+        b = self._get_selected()
+        is_archived = b.get("is_archived", False) if b else False
+
+        self.btn_target.setEnabled(True)
+        self.btn_delete.setEnabled(not is_archived)
+        self.btn_accept.setEnabled(not is_archived)
 
     def _get_selected(self):
         row = self.table.currentRow()
@@ -160,16 +165,7 @@ class QCBatchPage(BasePage):
             )
             self._load()
 
-    def _activate_selected(self):
-        b = self._get_selected()
-        if not b:
-            return
-        is_currently_active = b.get("is_active")
-        action_name = "取消使用並退役" if is_currently_active else "設為使用中"
-        if not self.confirm("確認", f"確定要將母批號 {b['lot_number']} (及所有關聯濃度) {action_name}？", default_yes=not is_currently_active):
-            return
-        QCBatchService.toggle_active(b["lot_number"], not is_currently_active)
-        self._load()
+
 
     def _delete_batch(self):
         b = self._get_selected()
@@ -210,13 +206,13 @@ class QCBatchPage(BasePage):
         b = item.data(Qt.ItemDataRole.UserRole)
         if not b:
             return
-        # Find the acceptance date for this batch from the records
-        records = QCBatchService.get_acceptance_records(b["batch_id"])
-        if not records:
-            QMessageBox.information(self, "提示", "查無此批號的歷史允收紀錄。")
-            return
+        # For mother lots, use created_at or open_date as the end date.
+        accepted_at = None
+        if b.get("created_at"):
+            accepted_at = b["created_at"].date() if hasattr(b["created_at"], "date") else b["created_at"]
+        elif b.get("open_date"):
+            accepted_at = b["open_date"].date() if hasattr(b["open_date"], "date") else b["open_date"]
             
-        accepted_at = records[0]["accepted_at"].date()
         dlg = QCAcceptanceDialog(self, b, self.user, read_only=True, fixed_end_date=accepted_at)
         dlg.exec()
 
@@ -309,7 +305,9 @@ class QCAcceptanceDialog(QDialog):
         
         title = "歷史允收記錄" if read_only else "執行品管批次允收"
         self.setWindowTitle(f"{title} — 商品套組 {batch['lot_number']}")
-        self.setMinimumSize(950, 750)
+        is_sed_lot = batch.get("lot_number", "").upper().startswith("D")
+        self.setMinimumSize(950, 420 if is_sed_lot else 750)
+        self.resize(950, 420 if is_sed_lot else 750)
         self.setStyleSheet(PAGE_STYLE)
 
         layout = QVBoxLayout(self)
@@ -347,7 +345,14 @@ class QCAcceptanceDialog(QDialog):
         
         self.tab_widgets = {}
 
-        for sub in batch.get("sub_lots", []):
+        sub_lots = batch.get("sub_lots", [])
+        if not sub_lots:
+            empty_lbl = QLabel("查無品管液允收資料或未設定子批號")
+            empty_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty_lbl.setStyleSheet("color: #888; font-size: 14px; margin: 20px;")
+            self.tabs.addTab(empty_lbl, "無資料")
+
+        for sub in sub_lots:
             level_id = sub["level_id"]
             lvl_name = sub["level_name"]
             
@@ -356,23 +361,54 @@ class QCAcceptanceDialog(QDialog):
             
             t_qual = QTableWidget()
             t_qual.setColumnCount(7)
-            t_qual.setHorizontalHeaderLabels(["項目", "正常數", "異常數", "總筆數", "Target", "允收設定", "定性結論"])
+            t_qual.setHorizontalHeaderLabels(["項目", "N", "正常數", "異常數", "合格率", "允收目標", "評估結果"])
             t_qual.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-            t_qual.setEditTriggers(QTableWidget.EditTrigger.AllEditTriggers if not read_only else QTableWidget.EditTrigger.NoEditTriggers)
-            tab_layout.addWidget(QLabel("定性 / 半定量分析"))
-            tab_layout.addWidget(t_qual, 4)
+            t_qual.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+            
+            t_qual.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            t_qual.setMinimumHeight(380)
+            t_qual.setMaximumHeight(380)
+            
+            if not is_sed_lot:
+                tab_layout.addWidget(t_qual, 4)
             
             t_quant = QTableWidget()
-            t_quant.setColumnCount(8)
-            t_quant.setHorizontalHeaderLabels(["項目", "TM", "TSD", "AM", "ASD", "CV%", "TEa%", "定量結論"])
+            t_quant.setColumnCount(9)
+            t_quant.setHorizontalHeaderLabels(["項目", "N", "TM", "TSD", "AM", "ASD", "CV%", "設定Mean", "設定SD"])
             t_quant.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-            t_quant.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-            t_quant.setMaximumHeight(100)
+            t_quant.setEditTriggers(QTableWidget.EditTrigger.AllEditTriggers if not read_only else QTableWidget.EditTrigger.NoEditTriggers)
+            
+            from PyQt6.QtWidgets import QStyledItemDelegate, QDoubleSpinBox
+            class QuantDelegate(QStyledItemDelegate):
+                def createEditor(self, parent, option, index):
+                    if index.column() in (7, 8):
+                        sp = QDoubleSpinBox(parent)
+                        sp.setRange(-9999, 9999)
+                        sp.setDecimals(2)
+                        sp.setButtonSymbols(QDoubleSpinBox.ButtonSymbols.NoButtons)
+                        return sp
+                    return super().createEditor(parent, option, index)
+
+                def setModelData(self, editor, model, index):
+                    if isinstance(editor, QDoubleSpinBox):
+                        model.setData(index, f"{editor.value():.2f}", Qt.ItemDataRole.EditRole)
+                    else:
+                        super().setModelData(editor, model, index)
+
+            t_quant.setItemDelegate(QuantDelegate(self))
+            
+            t_quant.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            t_quant.verticalHeader().setDefaultSectionSize(40)
+            t_quant.setMinimumHeight(140)
+            t_quant.setMaximumHeight(140)
             
             lbl_quant = QLabel("定量項目：")
             lbl_quant.setStyleSheet("font-weight: bold; margin-top: 10px;")
             tab_layout.addWidget(lbl_quant)
             tab_layout.addWidget(t_quant)
+            
+            if is_sed_lot:
+                tab_layout.addStretch()
             
             self.tabs.addTab(tab_widget, f"{lvl_name} ({sub['batch_id']})")
             self.tab_widgets[level_id] = {"qual": t_qual, "quant": t_quant, "sub": sub}
@@ -382,10 +418,14 @@ class QCAcceptanceDialog(QDialog):
         btn_cancel.clicked.connect(self.reject)
         
         if read_only:
+            btn_print = QPushButton("🖨️ 列印")
+            btn_print.setObjectName("btn_primary")
+            btn_print.clicked.connect(self._print_report)
             btn_row.addStretch()
+            btn_row.addWidget(btn_print)
             btn_row.addWidget(btn_cancel)
         else:
-            btn_accept = QPushButton("通過允收")
+            btn_accept = QPushButton("允收")
             btn_accept.setObjectName("btn_primary")
             btn_accept.clicked.connect(lambda: self._save(1))
             
@@ -442,59 +482,269 @@ class QCAcceptanceDialog(QDialog):
             for rname, data in stats["qual"].items():
                 r = t_qual.rowCount()
                 t_qual.insertRow(r)
+                n = data["n"]
+                passed = data["passed"]
+                failed = data["failed"]
+                pass_rate = (passed / n * 100) if n > 0 else 0.0
+                eval_res = "合格" if pass_rate >= 95 else "不合格"
                 
-                t_qual.setItem(r, 0, QTableWidgetItem(rname))
-                t_qual.setItem(r, 1, QTableWidgetItem(str(data["passed"])))
-                t_qual.setItem(r, 2, QTableWidgetItem(str(data["failed"])))
-                t_qual.setItem(r, 3, QTableWidgetItem(str(data["n"])))
+                items = [
+                    (0, QTableWidgetItem(rname)),
+                    (1, QTableWidgetItem(str(n))),
+                    (2, QTableWidgetItem(str(passed))),
+                    (3, QTableWidgetItem(str(failed))),
+                    (4, QTableWidgetItem(f"{pass_rate:.1f}%")),
+                    (5, QTableWidgetItem("95%")),
+                    (6, QTableWidgetItem(eval_res))
+                ]
                 
-                target_str = "未設定"
-                if self.read_only:
-                    rid = data.get("reagent_id")
-                    if rid and rid in self._target_settings.get(level_id, {}):
-                        ts = self._target_settings[level_id][rid]
-                        if ts.get("semi_target_min"):
-                            target_str = f"{ts['semi_target_min']} ~ {ts['semi_target_max']}"
-                t_qual.setItem(r, 4, QTableWidgetItem(target_str))
-                
-                c_set = QComboBox()
-                c_set.addItems(["Pass", "Fail", "N/A"])
-                if self.read_only: c_set.setEnabled(False)
-                t_qual.setCellWidget(r, 5, c_set)
-                
-                t_qual.setItem(r, 6, QTableWidgetItem("待確認"))
+                for col, itm in items:
+                    itm.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    t_qual.setItem(r, col, itm)
                 
             t_quant.setRowCount(0)
             for rname, data in stats["quant"].items():
                 r = t_quant.rowCount()
                 t_quant.insertRow(r)
                 
+                n = data.get("n", 0)
                 am = data["am"]
                 asd = data["asd"]
                 tm = data.get("tm")
                 tsd = data.get("tsd")
                 cv = (asd / am * 100) if am and asd is not None else 0
                 
+                n_str = str(n)
                 tm_str = f"{tm:.2f}" if tm is not None else "-"
                 tsd_str = f"{tsd:.2f}" if tsd is not None else "-"
                 am_str = f"{am:.2f}" if am is not None else "-"
                 asd_str = f"{asd:.2f}" if asd is not None else "-"
                 cv_str = f"{cv:.1f}%" if am is not None else "-"
                 
-                t_quant.setItem(r, 0, QTableWidgetItem(rname))
-                t_quant.setItem(r, 1, QTableWidgetItem(tm_str))
-                t_quant.setItem(r, 2, QTableWidgetItem(tsd_str))
-                t_quant.setItem(r, 3, QTableWidgetItem(am_str))
-                t_quant.setItem(r, 4, QTableWidgetItem(asd_str))
-                t_quant.setItem(r, 5, QTableWidgetItem(cv_str))
-                t_quant.setItem(r, 6, QTableWidgetItem("-"))
-                t_quant.setItem(r, 7, QTableWidgetItem("待確認"))
+                item_rname = QTableWidgetItem(rname)
+                item_rname.setData(Qt.ItemDataRole.UserRole, data.get("reagent_id"))
+                items = [
+                    (0, item_rname),
+                    (1, QTableWidgetItem(n_str)),
+                    (2, QTableWidgetItem(tm_str)),
+                    (3, QTableWidgetItem(tsd_str)),
+                    (4, QTableWidgetItem(am_str)),
+                    (5, QTableWidgetItem(asd_str)),
+                    (6, QTableWidgetItem(cv_str))
+                ]
+                for col, itm in items:
+                    itm.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    itm.setFlags(itm.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    t_quant.setItem(r, col, itm)
+                
+                from PyQt6.QtGui import QColor, QBrush
+                it_mean = QTableWidgetItem(f"{am:.2f}" if am is not None else "")
+                it_mean.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                it_sd = QTableWidgetItem(f"{tsd:.2f}" if tsd is not None else "")
+                it_sd.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+                if not self.read_only:
+                    it_mean.setBackground(QBrush(QColor("#E3F2FD")))
+                    it_mean.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable)
+                    it_sd.setBackground(QBrush(QColor("#E3F2FD")))
+                    it_sd.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsEditable)
+                else:
+                    it_mean.setFlags(it_mean.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    it_sd.setFlags(it_sd.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+                t_quant.setItem(r, 7, it_mean)
+                t_quant.setItem(r, 8, it_sd)
 
     def _save(self, status: int):
-        from services.qc_service import QCBatchService
-        # simplified save logic since it's just a dummy demo for now
-        QMessageBox.information(self, "完成", "允收紀錄已儲存。")
+        from services.qc_service import QCBatchService, TargetSettingService
+        from datetime import date
+        
+        # Save Target Settings for each quantitative row
+        for level_id, widgets in self.tab_widgets.items():
+            sub = widgets["sub"]
+            batch_id = sub["batch_id"]
+            t_quant = widgets["quant"]
+            
+            for r in range(t_quant.rowCount()):
+                item_rname = t_quant.item(r, 0)
+                if not item_rname: continue
+                reagent_id = item_rname.data(Qt.ItemDataRole.UserRole)
+                if not reagent_id: continue
+                
+                it_mean = t_quant.item(r, 7)
+                it_sd = t_quant.item(r, 8)
+                
+                if it_mean and it_sd:
+                    try:
+                        tm_val = float(it_mean.text())
+                        tsd_val = float(it_sd.text())
+                    except ValueError:
+                        continue
+                        
+                    iqi_id = f"{reagent_id}_{level_id}"
+                    
+                    TargetSettingService.save(
+                        iqi_id=iqi_id, 
+                        qc_batch_id=batch_id, 
+                        tm=tm_val, 
+                        tsd=tsd_val,
+                        cva=0.0,
+                        tea=0.0,
+                        mode=0,
+                        effective_from=date.today(),
+                        set_by=self.user["user_id"],
+                        change_reason="允收後設定"
+                    )
+        if status == 1:
+            QCBatchService.activate_and_retire_old(self.batch["lot_number"], "允收通過")
+            QMessageBox.information(self, "完成", "允收紀錄與新的品管目標已儲存，且已自動切換為使用中。")
+        else:
+            QMessageBox.information(self, "完成", "允收拒絕紀錄已儲存。")
+            
         self.accept()
+
+    def _print_report(self):
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+        from PyQt6.QtGui import QTextDocument, QPageLayout
+        from PyQt6.QtPrintSupport import QPrinter
+        from PyQt6.QtCore import QMarginsF, QSizeF
+        
+        if not self.tab_widgets:
+            QMessageBox.warning(self, "無資料", "目前沒有資料可以列印。")
+            return
+            
+        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"{self.batch.get('lot_number', 'QC')}_品管允收.pdf", "PDF (*.pdf)")
+        if not path: return
+        
+        acc_time = self.batch.get("accepted_at") or self.batch.get("created_at") or self.batch.get("open_date") or ""
+        if hasattr(acc_time, 'strftime'):
+            acc_time_str = acc_time.strftime("%Y/%m/%d %H:%M")
+        else:
+            acc_time_str = str(acc_time)[:16] if acc_time else "無紀錄"
+            
+        expiry = self.batch.get("expiry_date", "")
+        if hasattr(expiry, 'strftime'):
+            expiry_str = expiry.strftime("%Y/%m/%d")
+        else:
+            expiry_str = str(expiry) if expiry else "未設定"
+            
+        lot = self.batch.get("lot_number", "")
+        
+        sub_lots = self.batch.get("sub_lots", [])
+        levels = "/".join(str(s.get("level_id", "")) for s in sub_lots)
+        level_text = f"Level:{levels}" if levels else ""
+        
+        html = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: sans-serif; font-size: 12px; }}
+                h1 {{ font-size: 16pt; margin-bottom: 20px; text-align: center; }}
+                .info {{ font-size: 12pt; margin-bottom: 10px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }}
+                th {{ border: 1px solid black; background-color: #eee; padding: 6px; text-align: center; font-size: 10pt; }}
+                td {{ border: 1px solid black; padding: 4px; text-align: center; font-size: 10pt; }}
+                h2 {{ font-size: 12pt; margin-top: 20px; margin-bottom: 10px; }}
+            </style>
+        </head>
+        <body>
+            <h1>新批號品管液允收</h1>
+            <div class='info'>允收時間：{acc_time_str}</div>
+            <div class='info'>允收品管液批號：{lot}&nbsp;&nbsp;&nbsp;&nbsp;{level_text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{expiry_str}</div>
+        """
+        
+        qual_items = []
+        qual_data = {}
+        quant_items = []
+        quant_data = {}
+        levels_ordered = []
+        
+        for level_id, widgets in self.tab_widgets.items():
+            sub = widgets["sub"]
+            lvl_name = f"{sub['level_name'].replace(' ', '')}({sub.get('batch_id', '')})"
+            levels_ordered.append((level_id, lvl_name, sub.get('batch_id', '')))
+            
+            t_qual = widgets.get("qual")
+            if t_qual:
+                for r in range(t_qual.rowCount()):
+                    item_name = t_qual.item(r, 0).text() if t_qual.item(r, 0) else ""
+                    if not item_name: continue
+                    if item_name not in qual_data:
+                        qual_items.append(item_name)
+                        qual_data[item_name] = {}
+                    qual_data[item_name][level_id] = [
+                        t_qual.item(r, c).text() if t_qual.item(r, c) else ""
+                        for c in range(1, 7)
+                    ]
+                    
+            t_quant = widgets.get("quant")
+            if t_quant:
+                for r in range(t_quant.rowCount()):
+                    item_name = t_quant.item(r, 0).text() if t_quant.item(r, 0) else ""
+                    if not item_name: continue
+                    if item_name not in quant_data:
+                        quant_items.append(item_name)
+                        quant_data[item_name] = {}
+                    quant_data[item_name][level_id] = [
+                        t_quant.item(r, c).text() if t_quant.item(r, c) else ""
+                        for c in range(1, 9)
+                    ]
+                    
+        if qual_items:
+            html += "<table><thead>"
+            html += "<tr><th rowspan='2'>項目</th>"
+            for lvl_id, lvl_name, _ in levels_ordered:
+                html += f"<th colspan='6'>{lvl_name}</th>"
+            html += "</tr><tr>"
+            for _ in levels_ordered:
+                html += "<th>N</th><th>正常數</th><th>異常數</th><th>合格率</th><th>允收目標</th><th>評估結果</th>"
+            html += "</tr></thead><tbody>"
+            
+            for item in qual_items:
+                html += f"<tr><td>{item}</td>"
+                for lvl_id, _, _ in levels_ordered:
+                    vals = qual_data[item].get(lvl_id, [""] * 6)
+                    for v in vals:
+                        html += f"<td>{v}</td>"
+                html += "</tr>"
+            html += "</tbody></table><br>"
+            
+        if quant_items:
+            for item in quant_items:
+                html += f"<h2>{item}</h2>"
+                html += "<table><thead><tr>"
+                html += "<th>Assay</th><th>Lot</th><th>N</th><th>TM</th><th>TSD</th><th>AM</th><th>ASD</th><th>CV</th><th>設定 Mean</th><th>設定 SD</th>"
+                html += "</tr></thead><tbody>"
+                for lvl_id, lvl_name, batch_id in levels_ordered:
+                    if lvl_id in quant_data[item]:
+                        vals = quant_data[item][lvl_id]
+                        assay_name = lvl_name.split('(')[0].strip()
+                        html += "<tr>"
+                        html += f"<td>{assay_name}</td><td>{batch_id}</td>"
+                        for v in vals:
+                            html += f"<td>{v}</td>"
+                        html += "</tr>"
+                html += "</tbody></table><br>"
+                
+        html += """
+        </body>
+        </html>
+        """
+        
+        doc = QTextDocument()
+        doc.setHtml(html)
+        doc.setDocumentMargin(0)
+        
+        printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
+        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
+        printer.setOutputFileName(path)
+        printer.setPageMargins(QMarginsF(8, 10, 8, 10), QPageLayout.Unit.Millimeter)
+        
+        rect = printer.pageRect(QPrinter.Unit.Point)
+        doc.setPageSize(QSizeF(rect.width(), rect.height()))
+        
+        doc.print(printer)
+        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
 
 class TargetSettingDialog(QDialog):
     """設定品管範圍 (母子批號雙濃度)"""
@@ -502,6 +752,7 @@ class TargetSettingDialog(QDialog):
         super().__init__(parent)
         self.batch = batch
         self.user = user
+        self.is_archived = batch.get("is_archived", False)
         self.setWindowTitle(f"設定品管範圍 — 商品套組 {batch['lot_number']}")
         self.setMinimumSize(750, 650)
         self.setStyleSheet(PAGE_STYLE)
@@ -511,7 +762,8 @@ class TargetSettingDialog(QDialog):
         layout.setSpacing(16)
         
         top_row = QHBoxLayout()
-        info = QLabel(f"設定商品套組 {batch['lot_number']} 的品管範圍")
+        title_suffix = " (唯讀：已退役批號無法修改)" if self.is_archived else ""
+        info = QLabel(f"設定商品套組 {batch['lot_number']} 的品管範圍{title_suffix}")
         info.setStyleSheet("font-size:14px; color:#A48753; font-weight:bold;")
         top_row.addWidget(info)
         
@@ -521,6 +773,9 @@ class TargetSettingDialog(QDialog):
         top_row.addStretch()
         top_row.addWidget(btn_load_active)
         
+        if self.is_archived:
+            btn_load_active.setVisible(False)
+            
         layout.addLayout(top_row)
 
         self.tabs = QTabWidget()
@@ -533,7 +788,14 @@ class TargetSettingDialog(QDialog):
         reagents = MasterService.get_reagents()
         
         # Build a tab for each sub_lot
-        for sub in batch.get("sub_lots", []):
+        sub_lots = batch.get("sub_lots", [])
+        if not sub_lots:
+            empty_lbl = QLabel("查無品管液資料或未設定子批號")
+            empty_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty_lbl.setStyleSheet("color: #888; font-size: 14px; margin: 20px;")
+            self.tabs.addTab(empty_lbl, "無資料")
+
+        for sub in sub_lots:
             level_id = sub["level_id"]
             lvl_name = sub["level_name"]
             sub_batch_id = sub["batch_id"]
@@ -600,6 +862,10 @@ class TargetSettingDialog(QDialog):
                         if s_min: c_min.setCurrentText(s_min)
                         if s_max: c_max.setCurrentText(s_max)
                         
+                    if self.is_archived:
+                        c_min.setEnabled(False)
+                        c_max.setEnabled(False)
+                        
                     g.addWidget(c_min, row, 1)
                     g.addWidget(c_max, row, 2)
                     
@@ -641,6 +907,11 @@ class TargetSettingDialog(QDialog):
                         if ts.get("tea_percent") is not None: inp_tea.setText(str(ts["tea_percent"]))
                         updater()
                         
+                    if self.is_archived:
+                        inp_tm.setReadOnly(True)
+                        inp_tsd.setReadOnly(True)
+                        inp_tea.setReadOnly(True)
+                        
                     g.addWidget(inp_tm, row, 1)
                     g.addWidget(inp_tsd, row, 2)
                     g.addWidget(lbl_range, row, 3)
@@ -679,12 +950,16 @@ class TargetSettingDialog(QDialog):
         btn_save = QPushButton("儲存")
         btn_save.setObjectName("btn_primary")
         btn_save.clicked.connect(self._save)
-        btn_cancel = QPushButton("取消")
+        btn_cancel = QPushButton("關閉" if self.is_archived else "取消")
         btn_cancel.clicked.connect(self.reject)
         btn_row.addStretch()
         btn_row.addWidget(btn_cancel)
         btn_row.addWidget(btn_save)
         layout.addLayout(btn_row)
+        
+        if self.is_archived:
+            reason_container.setVisible(False)
+            btn_save.setVisible(False)
 
     def _load_active_targets(self):
         from services.qc_service import MasterService, TargetSettingService

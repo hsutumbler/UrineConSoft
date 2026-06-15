@@ -73,7 +73,7 @@ class QCInquiryPage(BasePage):
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels([
-            "日期", "品管液批號", "Level", "穩定效期", "執行人員"
+            "允收日期", "品管液批號", "Level", "穩定效期", "執行人員"
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -173,14 +173,14 @@ class QCInquiryPage(BasePage):
             "lot_number": rec["lot_number"],
             "level_name": rec["level_name"],
             "accepted_by_name": rec.get("accepted_by_name"),
-            "accepted_at": rec.get("accepted_at")
+            "accepted_at": rec.get("accepted_at"),
+            "sub_lots": rec.get("sub_lots", [])
         }
         records = QCBatchService.get_acceptance_records(b["batch_id"])
-        
-        # Need to parse accepted_at date if records exist, otherwise use a fallback
+        # Parse accepted_at date from the record to show data from that time
         accepted_at = None
-        if records and records[0].get("accepted_at"):
-            accepted_at = records[0]["accepted_at"].date()
+        if b.get("accepted_at"):
+            accepted_at = b["accepted_at"].date() if hasattr(b["accepted_at"], "date") else b["accepted_at"]
             
         dlg = QCAcceptanceDialog(self, b, self.user, read_only=True, fixed_end_date=accepted_at)
         dlg.exec()
@@ -232,7 +232,7 @@ class QCInquiryPage(BasePage):
             <table>
                 <thead>
                     <tr>
-                        <th>日期</th>
+                        <th>允收日期</th>
                         <th>批號</th>
                         <th>Level</th>
                         <th>穩定效期</th>
