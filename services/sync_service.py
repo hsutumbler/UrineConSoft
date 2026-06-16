@@ -1,5 +1,6 @@
 import datetime
 from database.connection import DBContext, MSSQLContext
+from logger_setup import logger
 
 class SyncService:
     @staticmethod
@@ -17,7 +18,7 @@ class SyncService:
             if not last_sync or last_sync < datetime.datetime(2026, 6, 1):
                 last_sync = datetime.datetime(2026, 6, 1)
 
-        print(f"Syncing records from MS SQL since {last_sync}...")
+        logger.info(f"Syncing records from MS SQL since {last_sync}...")
 
         records_to_sync = []
         with MSSQLContext() as (conn, cursor):
@@ -30,7 +31,7 @@ class SyncService:
             records_to_sync = cursor.fetchall()
 
         if not records_to_sync:
-            print("No new records to sync.")
+            logger.info("No new records to sync.")
             return 0
 
         def get_qualitative_string(local_mtid, i_value):
@@ -135,7 +136,7 @@ class SyncService:
                 ))
                 inserted_count += 1
 
-        print(f"Successfully synced {inserted_count} records to MySQL DailyQC.")
+        logger.info(f"Successfully synced {inserted_count} records to MySQL DailyQC.")
         return inserted_count
 
 if __name__ == "__main__":

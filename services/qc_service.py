@@ -444,17 +444,21 @@ class QCBatchService:
             l1_id = l1_lot_id if l1_lot_id else str(uuid.uuid4())
             l2_id = l2_lot_id if l2_lot_id else str(uuid.uuid4())
             
+            cur.execute("SELECT name FROM users WHERE user_id=%s", (created_by,))
+            u_row = cur.fetchone()
+            user_name = u_row["name"] if u_row else "未知使用者"
+            
             # Insert L1
             cur.execute(
                 "INSERT INTO LotTable (lot, lot_id, lot_Level, QC_date, expiry_date, Writedate, iUser, is_active, is_archived, acceptance_status) "
                 "VALUES (%s,%s,'1',%s,%s,%s,%s, 0, 0, 'pending')",
-                (mother_lot, l1_id, open_date, expiry_date, now, "Admin"),
+                (mother_lot, l1_id, open_date, expiry_date, now, user_name),
             )
             # Insert L2
             cur.execute(
                 "INSERT INTO LotTable (lot, lot_id, lot_Level, QC_date, expiry_date, Writedate, iUser, is_active, is_archived, acceptance_status) "
                 "VALUES (%s,%s,'2',%s,%s,%s,%s, 0, 0, 'pending')",
-                (mother_lot, l2_id, open_date, expiry_date, now, "Admin"),
+                (mother_lot, l2_id, open_date, expiry_date, now, user_name),
             )
             return mother_lot
 
@@ -593,11 +597,15 @@ class TargetSettingService:
             if not b_row: return
             from datetime import datetime
             
+            cur.execute("SELECT name FROM users WHERE user_id=%s", (set_by,))
+            u_row = cur.fetchone()
+            user_name = u_row["name"] if u_row else "未知使用者"
+            
             cur.execute(
                 "INSERT INTO LotTest "
-                "(mhId, cId, mtId, lot, tMean, tSd, CVA, TEA, iDateTime, iUser, LotStyle) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (b_row["mhId"], "", reagent_id, qc_batch_id, tm, tsd, cva, tea, datetime.now(), "Admin", "N")
+                "(mhId, cId, mtId, lot, tMean, tSd, CVA, TEA, iDateTime, iUser, LotStyle, change_reason) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (b_row["mhId"], "", reagent_id, qc_batch_id, tm, tsd, cva, tea, datetime.now(), user_name, "N", change_reason)
             )
 
     @staticmethod
@@ -610,13 +618,17 @@ class TargetSettingService:
             if not b_row: return
             from datetime import datetime
             
+            cur.execute("SELECT name FROM users WHERE user_id=%s", (set_by,))
+            u_row = cur.fetchone()
+            user_name = u_row["name"] if u_row else "未知使用者"
+            
             # Use semi_max for range
             rng = f"{semi_min}-{semi_max}" if semi_min != semi_max else semi_max
             cur.execute(
                 "INSERT INTO LotTest "
-                "(mhId, cId, mtId, lot, `Range`, iDateTime, iUser, LotStyle) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                (b_row["mhId"], "", reagent_id, qc_batch_id, rng, datetime.now(), "Admin", "N")
+                "(mhId, cId, mtId, lot, `Range`, iDateTime, iUser, LotStyle, change_reason) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (b_row["mhId"], "", reagent_id, qc_batch_id, rng, datetime.now(), user_name, "N", change_reason)
             )
 
 
@@ -657,12 +669,16 @@ class QCResultService:
             else:
                 dt_val = datetime.combine(result_date, datetime.min.time())
                 
+            cur.execute("SELECT name FROM users WHERE user_id=%s", (entered_by,))
+            u_row = cur.fetchone()
+            user_name = u_row["name"] if u_row else "未知使用者"
+            
             cur.execute(
                 "INSERT INTO DailyQC "
                 "(mhId, mtId, iValue, iDate, iUser, lot, sdFlag, sysTime, Check_Type) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (mhId, reagent_id, measured_value, dt_val, 
-                 "Admin", lot_id_to_save, sd_flag_val, now, check_type)
+                 user_name, lot_id_to_save, sd_flag_val, now, check_type)
             )
             return cur.lastrowid
 

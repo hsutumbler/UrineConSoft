@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QDateEdit, QPushButton, QSplitter, QListWidget, QListWidgetItem,
     QFrame, QMessageBox, QScrollBar, QMenu, QInputDialog, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import Qt, QDate, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QColor, QCursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -20,6 +20,19 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 
 from ui.base_page import BasePage, PAGE_STYLE, COLORS
 from services.qc_service import MasterService, QCResultService, TargetSettingService, QCBatchService
+from logger_setup import logger
+
+class LJCSyncThread(QThread):
+    finished_sync = pyqtSignal()
+
+    def run(self):
+        try:
+            from services.sync_service import SyncService
+            SyncService.sync_daily_qc()
+        except Exception as e:
+            logger.error(f"LJC Sync failed: {e}")
+        finally:
+            self.finished_sync.emit()
 
 
 class LJChartPage(BasePage):
@@ -65,10 +78,10 @@ class LJChartPage(BasePage):
         
         filter_bar.addStretch()
         
-        btn_refresh = QPushButton("更新圖表")
-        btn_refresh.setObjectName("btn_primary")
-        btn_refresh.clicked.connect(self._draw_chart)
-        filter_bar.addWidget(btn_refresh)
+        self.btn_refresh = QPushButton("更新")
+        self.btn_refresh.setObjectName("btn_primary")
+        self.btn_refresh.clicked.connect(self._sync_and_draw)
+        filter_bar.addWidget(self.btn_refresh)
         
         self.content_layout.addLayout(filter_bar)
         
@@ -913,7 +926,7 @@ class LJChartPage(BasePage):
             if item.widget():
                 item.widget().deleteLater()
 
-    def _load_batches(self):
+    def _load_combos(self):
         self.cmb_batch.blockSignals(True)
         self.cmb_batch.clear()
         
@@ -960,5 +973,18 @@ class LJChartPage(BasePage):
         self.cmb_batch.blockSignals(False)
 
     def on_page_show(self):
-        self._load_batches()
+        self._load_combos()
         self._draw_chart(reset_scroll=True)
+
+    def _sync_and_draw(self):
+        self.btn_refresh.setEnabled(False)
+        self.btn_refresh.setText("🔄 同步中...")
+        
+        self._sync_thread = LJCSyncThread(self)
+        self._sync_thread.finished_sync.connect(self._on_sync_finished)
+        self._sync_thread.start()
+        
+    def _on_sync_finished(self):
+        self.btn_refresh.setEnabled(True)
+        self.btn_refresh.setText("更新")
+        self._draw_chart()

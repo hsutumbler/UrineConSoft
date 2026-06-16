@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDate
 from ui.base_page import PAGE_STYLE
 from services.inquiry_service import InquiryService
+from logger_setup import logger
 
 class ReagentInquiryPage(QWidget):
     def __init__(self, user: dict, is_subpage=False):
@@ -143,7 +144,7 @@ class ReagentInquiryPage(QWidget):
                     if isinstance(s_data, dict):
                         old_lot = str(s_data.get("active_batch") or s_data.get("active_lot") or "")
                 except Exception as e:
-                    print(f"Error parsing snap: {e}")
+                    logger.error(f"Error parsing snap: {e}")
 
             vals = [str(dt), str(old_lot), str(new_lot), str(by)]
             for c, v in enumerate(vals):

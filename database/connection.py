@@ -1,6 +1,7 @@
 # database/connection.py — 資料庫連線管理 (雙資料庫模式)
 
 import config
+from logger_setup import logger
 from config import DB_CONFIG, POOL_CONFIG, MSSQL_CONFIG
 
 class MockRow(dict):
@@ -64,7 +65,7 @@ class DatabasePool:
                 )
             return cls._mysql_pool.get_connection()
         except Exception as e:
-            print(f"MySQL Connection Error: {e}")
+            logger.error(f"MySQL Connection Error: {e}")
             cls._offline_mode = True
             return MockConnection()
 
@@ -83,7 +84,7 @@ class DatabasePool:
                 login_timeout=MSSQL_CONFIG.get('login_timeout', 5)
             )
         except Exception as e:
-            print(f"MSSQL Connection Error: {e}")
+            logger.error(f"MSSQL Connection Error: {e}")
             # 不強制切換為 offline，避免單邊斷線影響另一邊
             return MockConnection()
 
@@ -176,7 +177,7 @@ class MSSQLContext:
         return False
 
 
-def test_connection() -> bool:
+def test_connection() -> tuple[bool, bool]:
     """測試兩個資料庫的連線狀態"""
     mysql_ok = False
     mssql_ok = False
@@ -195,7 +196,7 @@ def test_connection() -> bool:
         DatabasePool._mysql_pool = pool
         mysql_ok = True
     except Exception as e:
-        print(f"[❌ MySQL 連線失敗] {e}")
+        logger.error(f"[❌ MySQL 連線失敗] {e}")
         DatabasePool._mysql_pool = None
 
     # Test MSSQL
@@ -216,13 +217,13 @@ def test_connection() -> bool:
         conn.close()
         mssql_ok = True
     except Exception as e:
-        print(f"[❌ MSSQL 連線失敗] {e}")
+        logger.error(f"[❌ MSSQL 連線失敗] {e}")
         
     if mysql_ok:
         DatabasePool._offline_mode = False
         if not mssql_ok:
-            print("[⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。")
-        return True
+            logger.warning("[⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。")
     else:
         DatabasePool._offline_mode = True
-        return False
+
+    return mysql_ok, mssql_ok

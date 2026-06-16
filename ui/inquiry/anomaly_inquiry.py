@@ -65,7 +65,7 @@ class AnomalyInquiryPage(BasePage):
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
-            "單號", "發生時間", "儀器", "Level", "項目", "異常原因", "建立者"
+            "單號", "異常發生時間", "儀器", "Level", "項目", "異常原因", "建立者"
         ])
         
         header = self.table.horizontalHeader()
@@ -137,7 +137,7 @@ class AnomalyInquiryPage(BasePage):
             serial = r.get("serial_number") or ""
             
             self._set_item(row, 0, serial, user_data=r)
-            self._set_item(row, 1, str(dt)[:16] if dt else "")
+            self._set_item(row, 1, str(dt)[:19] if dt else "")
             self._set_item(row, 2, inst)
             self._set_item(row, 3, lvl)
             self._set_item(row, 4, param)
@@ -224,7 +224,7 @@ class AnomalyInquiryPage(BasePage):
     def _build_html_table(self) -> str:
         rows_html = ""
         for r in self.current_data:
-            dt = str(r.get("occurrence_time") or "")[:16]
+            dt = str(r.get("occurrence_time") or "")[:19]
             inst = str(r.get("instrument_name") or "")
             lvl = str(r.get("qc_level") or "")
             param = str(r.get("reagent_name") or "")
@@ -259,14 +259,14 @@ class AnomalyInquiryPage(BasePage):
             <table>
                 <thead>
                     <tr>
-                        <th width="10%">表單編號</th>
-                        <th width="15%">發生時間</th>
-                        <th width="10%">儀器</th>
-                        <th width="10%">Level</th>
-                        <th width="15%">異常項目</th>
-                        <th width="25%">異常原因</th>
-                        <th width="15%">建檔人員</th>
-                    </tr>
+                    <th style='width: 12%;'>單號</th>
+                    <th style='width: 15%;'>異常發生時間</th>
+                    <th style='width: 12%;'>儀器</th>
+                    <th style='width: 8%;'>Level</th>
+                    <th style='width: 12%;'>項目</th>
+                    <th style='width: 33%;'>異常原因</th>
+                    <th style='width: 8%;'>建立者</th>
+                </tr>
                 </thead>
                 <tbody>
                     {rows_html}

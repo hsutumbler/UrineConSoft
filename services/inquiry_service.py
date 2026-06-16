@@ -37,7 +37,7 @@ class InquiryService:
             query = (
                 "SELECT t.ltId AS setting_id, t.tMean AS tm, t.tSd AS tsd, "
                 "t.`Range` AS semi_target_min, t.`Range` AS semi_target_max, "
-                "t.iDateTime AS set_at, t.iUser AS set_by_name, "
+                "t.iDateTime AS set_at, t.iUser AS set_by_name, t.change_reason, "
                 "COALESCE(m.mhName, '全部儀器') AS instrument_name, "
                 "r.mhitem AS reagent_name, CASE WHEN r.mhitem='pH' THEN 3 WHEN r.itemtype='Q' THEN 1 ELSE 2 END AS param_type, "
                 "b.lot AS lot_number, b.lot_Level AS level_name, CONCAT(t.mtId, '_', b.lot_Level) AS iqi_id "

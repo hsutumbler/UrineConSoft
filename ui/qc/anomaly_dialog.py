@@ -52,7 +52,7 @@ class AnomalyRecordDialog(QDialog):
         
         dt_str = ""
         if r.get("result_date"):
-            dt_str = r.get("result_date").strftime("%Y-%m-%d") if hasattr(r.get("result_date"), "strftime") else str(r.get("result_date"))
+            dt_str = r.get("result_date").strftime("%Y-%m-%d %H:%M:%S") if hasattr(r.get("result_date"), "strftime") else str(r.get("result_date"))
         
         # 假設 lj_chart 有丟這些屬性進去，如果沒有就留白
         # 實作上需要由 lj_chart 把完整資訊包裝在 dict 中傳入
@@ -73,7 +73,7 @@ class AnomalyRecordDialog(QDialog):
         info_layout.addRow("機器：", QLabel(self.instrument_name))
         info_layout.addRow("品管液批號：", QLabel(self.qc_lot_number))
         info_layout.addRow("Level：", QLabel(self.level_name))
-        info_layout.addRow("發生時間：", QLabel(self.occurrence_time))
+        info_layout.addRow("異常發生時間：", QLabel(self.occurrence_time))
         info_layout.addRow("異常數據：", QLabel(self.anomaly_data))
         
         rule_lbl = QLabel(self.violated_rule)
@@ -360,7 +360,7 @@ class AnomalyRecordDialog(QDialog):
                     <td style="border-bottom: 1px dotted #ccc; border-left: none;"><b>Level：</b> {self.level_name}</td>
                 </tr>
                 <tr>
-                    <td style="border-bottom: 1px solid #000; border-right: none;"><b>發生時間：</b> {self.occurrence_time}</td>
+                    <td style="border-bottom: 1px solid #000; border-right: none;"><b>異常發生時間：</b> {self.occurrence_time}</td>
                     <td style="border-bottom: 1px solid #000; border-left: none;"><b>異常數據：</b> {self.anomaly_data} {f'(<span style="color:red;">{self.violated_rule}</span>)' if self.violated_rule and self.violated_rule != '無' else ''}</td>
                 </tr>
                 

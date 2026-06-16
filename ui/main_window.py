@@ -10,6 +10,7 @@ from PyQt6.QtGui import QFont
 from config import APP_NAME, DEFAULT_FONT
 from services.auth_service import AuthService
 from services.sync_service import SyncService
+from logger_setup import logger
 
 
 class SyncThread(QThread):
@@ -19,7 +20,7 @@ class SyncThread(QThread):
         try:
             SyncService.sync_daily_qc()
         except Exception as e:
-            print(f"Background sync failed: {e}")
+            logger.error(f"Background sync failed: {e}")
         finally:
             self.finished_sync.emit()
 

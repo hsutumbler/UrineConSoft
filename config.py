@@ -31,7 +31,7 @@ POOL_CONFIG = {
     "pool_reset_session": True,
 }
 
-APP_NAME    = "UrineConSoft 品管系統"
+APP_NAME = "尿液品管系統"
 APP_VERSION = "1.0.0"
 
 import platform

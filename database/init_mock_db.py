@@ -97,7 +97,8 @@ def init_mock_db():
         TA VARCHAR(20),
         SDI VARCHAR(20),
         SIGMA VARCHAR(20),
-        BIAS VARCHAR(20)
+        BIAS VARCHAR(20),
+        change_reason VARCHAR(255)
     );
 
     CREATE TABLE DailyQC (
@@ -177,6 +178,7 @@ def init_mock_db():
         user_id INT AUTO_INCREMENT PRIMARY KEY,
         employee_id VARCHAR(50),
         name VARCHAR(50),
+        password_hash VARCHAR(255),
         role INT,
         is_active BOOLEAN DEFAULT TRUE
     );
@@ -323,7 +325,7 @@ def init_mock_db():
         for i in items:
             cursor.execute("INSERT INTO MhItem (mhcode, mtId, mhitem, itemtype) VALUES (%s, %s, %s, %s)", i)
             
-        cursor.execute("INSERT INTO users (user_id, employee_id, name, role) VALUES (1, 'admin', '系統管理員', 3)")
+        cursor.execute("INSERT INTO users (user_id, employee_id, name, password_hash, role) VALUES (1, 'admin', '系統管理員', '', 3)")
 
         conn.commit()
         print("Initialization complete!")

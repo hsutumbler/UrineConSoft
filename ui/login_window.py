@@ -42,27 +42,29 @@ class LoginWindow(QDialog):
         title.setObjectName("brand_title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        subtitle = QLabel("鏡檢組品管系統")
-        subtitle.setObjectName("brand_subtitle")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
         layout.addWidget(icon_label)
         layout.addSpacing(10)
         layout.addWidget(title)
-        layout.addSpacing(4)
-        layout.addWidget(subtitle)
         layout.addSpacing(20)
 
         # 連線狀態
         status_row = QHBoxLayout()
         status_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         status_row.setSpacing(6)
-        self.indicator = QLabel()
-        self.indicator.setFixedSize(10, 10)
-        self.indicator.setStyleSheet("border-radius:5px; background:#CC3333;")
-        self.lbl_conn = QLabel("偵測中...")
-        self.lbl_conn.setStyleSheet(f"font-size:12px; color:#6B6444; font-family:{DEFAULT_FONT};")
-        self.btn_reconnect = QPushButton("連線伺服器")
+        
+        self.ind_mysql = QLabel()
+        self.ind_mysql.setFixedSize(10, 10)
+        self.ind_mysql.setStyleSheet("border-radius:5px; background:#CC3333;")
+        self.lbl_mysql = QLabel("連接品管伺服器")
+        self.lbl_mysql.setStyleSheet(f"font-size:12px; color:#6B6444; font-family:{DEFAULT_FONT};")
+        
+        self.ind_mssql = QLabel()
+        self.ind_mssql.setFixedSize(10, 10)
+        self.ind_mssql.setStyleSheet("border-radius:5px; background:#CC3333;")
+        self.lbl_mssql = QLabel("連接醫全伺服器")
+        self.lbl_mssql.setStyleSheet(f"font-size:12px; color:#6B6444; font-family:{DEFAULT_FONT};")
+
+        self.btn_reconnect = QPushButton("重試")
         self.btn_reconnect.setObjectName("btn_reconnect")
         self.btn_reconnect.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_reconnect.setFlat(True)
@@ -74,8 +76,12 @@ class LoginWindow(QDialog):
             }}
             QPushButton#btn_reconnect:hover {{ color:#7A6118; text-decoration:underline; }}
         """)
-        status_row.addWidget(self.indicator)
-        status_row.addWidget(self.lbl_conn)
+        
+        status_row.addWidget(self.ind_mssql)
+        status_row.addWidget(self.lbl_mssql)
+        status_row.addSpacing(10)
+        status_row.addWidget(self.ind_mysql)
+        status_row.addWidget(self.lbl_mysql)
         status_row.addWidget(self.btn_reconnect)
         layout.addLayout(status_row)
         layout.addSpacing(20)
@@ -165,21 +171,30 @@ class LoginWindow(QDialog):
         """)
 
     def _check_db(self):
-        self.lbl_conn.setText("連線中...")
+        self.lbl_mysql.setText("連接品管伺服器...")
+        self.lbl_mssql.setText("連接醫全伺服器...")
         self.btn_reconnect.setEnabled(False)
         from PyQt6.QtCore import QCoreApplication
         QCoreApplication.processEvents()
         from database.connection import test_connection
-        ok = test_connection()
+        mysql_ok, mssql_ok = test_connection()
         self.btn_reconnect.setEnabled(True)
-        if ok:
-            self.indicator.setStyleSheet("border-radius:5px; background:#28A745;")
-            self.lbl_conn.setText("已連接資料庫")
-            self.lbl_conn.setStyleSheet(f"font-size:12px; color:#28A745; font-weight:bold; font-family:{DEFAULT_FONT};")
+        
+        self.lbl_mysql.setText("連接品管伺服器")
+        if mysql_ok:
+            self.ind_mysql.setStyleSheet("border-radius:5px; background:#28A745;")
+            self.lbl_mysql.setStyleSheet(f"font-size:12px; color:#28A745; font-weight:bold; font-family:{DEFAULT_FONT};")
         else:
-            self.indicator.setStyleSheet("border-radius:5px; background:#CC3333;")
-            self.lbl_conn.setText("未連接資料庫")
-            self.lbl_conn.setStyleSheet(f"font-size:12px; color:#CC3333; font-weight:bold; font-family:{DEFAULT_FONT};")
+            self.ind_mysql.setStyleSheet("border-radius:5px; background:#CC3333;")
+            self.lbl_mysql.setStyleSheet(f"font-size:12px; color:#CC3333; font-weight:bold; font-family:{DEFAULT_FONT};")
+            
+        self.lbl_mssql.setText("連接醫全伺服器")
+        if mssql_ok:
+            self.ind_mssql.setStyleSheet("border-radius:5px; background:#28A745;")
+            self.lbl_mssql.setStyleSheet(f"font-size:12px; color:#28A745; font-weight:bold; font-family:{DEFAULT_FONT};")
+        else:
+            self.ind_mssql.setStyleSheet("border-radius:5px; background:#CC3333;")
+            self.lbl_mssql.setStyleSheet(f"font-size:12px; color:#CC3333; font-weight:bold; font-family:{DEFAULT_FONT};")
 
     def _do_login(self):
         emp_id = self.input_id.text().strip()

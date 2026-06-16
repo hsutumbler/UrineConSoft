@@ -369,7 +369,8 @@ class QCDataEntryPage(BasePage):
                 it_l1.setFlags(it_l1.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.t_input.setItem(row, 1, it_l1)
             
-            range_l1 = self._get_range_string(iqi_l1, rdata["param_type"], b1["batch_id"] if b1 else None) if iqi_l1 else ""
+            decimals = self._row_decimals.get(row, 3)
+            range_l1 = self._get_range_string(iqi_l1, rdata["param_type"], b1["batch_id"] if b1 else None, decimals) if iqi_l1 else ""
             it_r1 = QTableWidgetItem(range_l1)
             it_r1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             it_r1.setFlags(it_r1.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -388,7 +389,8 @@ class QCDataEntryPage(BasePage):
                 it_l2.setFlags(it_l2.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.t_input.setItem(row, 3, it_l2)
             
-            range_l2 = self._get_range_string(iqi_l2, rdata["param_type"], b2["batch_id"] if b2 else None) if iqi_l2 else ""
+            decimals = self._row_decimals.get(row, 3)
+            range_l2 = self._get_range_string(iqi_l2, rdata["param_type"], b2["batch_id"] if b2 else None, decimals) if iqi_l2 else ""
             it_r2 = QTableWidgetItem(range_l2)
             it_r2.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             it_r2.setFlags(it_r2.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -424,7 +426,7 @@ class QCDataEntryPage(BasePage):
         self.table_container.addWidget(self.t_input)
         self.t_input.itemChanged.connect(self._on_item_changed)
 
-    def _get_range_string(self, iqi_id, param_type, qc_batch_id):
+    def _get_range_string(self, iqi_id, param_type, qc_batch_id, decimals=3):
         from services.qc_service import TargetSettingService
         if qc_batch_id:
             ts = TargetSettingService.get_for_batch(iqi_id, qc_batch_id)
@@ -438,7 +440,9 @@ class QCDataEntryPage(BasePage):
             if ts.get("tm") is not None and ts.get("tsd") is not None:
                 tm = float(ts["tm"])
                 tsd = float(ts["tsd"])
-                return f"{tm - 2*tsd:.4g} ~ {tm + 2*tsd:.4g}"
+                lower = tm - 2 * tsd
+                upper = tm + 2 * tsd
+                return f"{lower:.{decimals}f} ~ {upper:.{decimals}f}"
             return "未設定"
         elif param_type in (2, 3):
             s_min = ts.get("semi_target_min")

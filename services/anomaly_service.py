@@ -84,13 +84,17 @@ class AnomalyService:
                 c = c_row['c'] if c_row else 0
                 sn = f"CE{ym}{c+1:03d}"
                 
+                cursor.execute("SELECT name FROM users WHERE user_id=%s", (data.get("created_by"),))
+                u_row = cursor.fetchone()
+                user_name = u_row["name"] if u_row else "未知使用者"
+                
                 cursor.execute("""
                     INSERT INTO QCaberrant (
                         aberrantNO, dqcId, UserName, mhName, WriteDate, IncidentTime,
                         lot, Err_Lab, Cause, UserFunction, FunctionResult, Precaution, inote1
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
-                    sn, data["result_id"], "Admin", data.get("instrument_name", ""),
+                    sn, data["result_id"], user_name, data.get("instrument_name", ""),
                     now, data.get("occurrence_time", now), data.get("qc_lot_number", ""),
                     data.get("violated_rule", ""), data.get("anomaly_cause", ""),
                     data.get("corrective_action", ""), data.get("corrective_result", ""),
