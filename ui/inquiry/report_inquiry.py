@@ -234,8 +234,8 @@ class QCReportDialog(QDialog):
                 <div class="doc-id">文件編號：{doc_id}</div>
                 <div class="info">
                     <div>統計日期：{stat_date}</div>
-                    <div style="margin-top: 5px;">組別：{group}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;儀器：{self.inst_name}</div>
-                    <div style="margin-top: 5px;">品管液批號：{self.lot_number}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Level：{lvl}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{self.expiry_date}</div>
+                    <div>組別：{group}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;儀器：{self.inst_name}</div>
+                    <div>品管液批號：{self.lot_number}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Level：{lvl}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{self.expiry_date}</div>
                 </div>
             """
             
@@ -257,7 +257,7 @@ class QCReportDialog(QDialog):
                             html += f"<td>{val}</td>"
                     html += "</tr>"
                 html += "</tbody></table>"
-
+ 
             if 'quant' in tables and tables['quant'].rowCount() > 0:
                 html += '<div class="section-title">定量</div>'
                 html += '<table class="data-table" width="100%"><thead><tr>'
@@ -290,21 +290,17 @@ class QCReportDialog(QDialog):
             
         html += "</body></html>"
         
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"品管報表_{self.lot_number}.pdf", "PDF (*.pdf)")
-        if not path: return
-        
         doc = QTextDocument()
         doc.setHtml(html)
         
+        from PyQt6.QtPrintSupport import QPrintDialog
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         printer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
         printer.setPageOrientation(QPageLayout.Orientation.Portrait)
         
-        doc.print(printer)
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功儲存至:\\n{path}")
-
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            doc.print(printer)
 
 class ReportInquiryPage(BasePage):
     def __init__(self, user: dict, is_subpage=False):

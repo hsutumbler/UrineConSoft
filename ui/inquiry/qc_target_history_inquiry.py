@@ -101,8 +101,7 @@ class QCTargetHistoryDetailDialog(QDialog):
         layout.addLayout(btn_layout)
 
     def _print_form(self):
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"{self.form_id}.pdf", "PDF (*.pdf)")
-        if not path: return
+        from PyQt6.QtPrintSupport import QPrintDialog
         
         rows_html = ""
         for i in range(self.table.rowCount()):
@@ -180,11 +179,10 @@ class QCTargetHistoryDetailDialog(QDialog):
         doc.setDocumentMargin(20)
         
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         
-        doc.print(printer)
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            doc.print(printer)
 
 
 class QCTargetHistoryInquiryPage(BasePage):
@@ -324,8 +322,7 @@ class QCTargetHistoryInquiryPage(BasePage):
             QMessageBox.warning(self, "錯誤", "目前無資料可列印")
             return
             
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"品管範圍修訂查詢_{self.user['user_id']}.pdf", "PDF (*.pdf)")
-        if not path: return
+        from PyQt6.QtPrintSupport import QPrintDialog
         
         rows_html = ""
         for r in range(self.table.rowCount()):
@@ -387,10 +384,9 @@ class QCTargetHistoryInquiryPage(BasePage):
         doc.setDocumentMargin(10)
         
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         printer.setPageOrientation(QPageLayout.Orientation.Landscape)
         printer.setPageMargins(QMarginsF(8, 10, 8, 10), QPageLayout.Unit.Millimeter)
         
-        doc.print(printer)
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            doc.print(printer)

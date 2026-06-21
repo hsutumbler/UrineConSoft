@@ -191,13 +191,10 @@ class QCInquiryPage(BasePage):
             QMessageBox.warning(self, "無資料", "目前沒有資料可以列印。")
             return
             
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+        from PyQt6.QtWidgets import QMessageBox
         from PyQt6.QtGui import QTextDocument, QPageLayout
-        from PyQt6.QtPrintSupport import QPrinter
+        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
         from PyQt6.QtCore import QMarginsF, QSizeF
-        
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", "品管允收查詢.pdf", "PDF (*.pdf)")
-        if not path: return
         
         rows_html = ""
         for r in range(self.table.rowCount()):
@@ -228,7 +225,7 @@ class QCInquiryPage(BasePage):
             </style>
         </head>
         <body>
-            <h2>品管允收查詢</h2>
+            <h2>品管液允收查詢</h2>
             <table>
                 <thead>
                     <tr>
@@ -252,12 +249,10 @@ class QCInquiryPage(BasePage):
         doc.setDocumentMargin(0)
         
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         printer.setPageMargins(QMarginsF(8, 10, 8, 10), QPageLayout.Unit.Millimeter)
         
-        rect = printer.pageRect(QPrinter.Unit.Point)
-        doc.setPageSize(QSizeF(rect.width(), rect.height()))
-        
-        doc.print(printer)
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            rect = printer.pageRect(QPrinter.Unit.Point)
+            doc.setPageSize(QSizeF(rect.width(), rect.height()))
+            doc.print(printer)

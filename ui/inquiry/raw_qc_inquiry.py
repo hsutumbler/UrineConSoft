@@ -264,8 +264,7 @@ class RawQCInquiryPage(BasePage):
             QMessageBox.warning(self, "無資料", "目前表格沒有資料可以列印。")
             return
             
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"品管數據查詢.pdf", "PDF (*.pdf)")
-        if not path: return
+        from PyQt6.QtPrintSupport import QPrintDialog
         
         html = self._build_html_table()
             
@@ -274,16 +273,13 @@ class RawQCInquiryPage(BasePage):
         doc.setDocumentMargin(0)
         
         printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         printer.setPageMargins(QMarginsF(8, 10, 8, 10), QPageLayout.Unit.Millimeter)
         
-        rect = printer.pageRect(QPrinter.Unit.Point)
-        doc.setPageSize(QSizeF(rect.width(), rect.height()))
-        
-        doc.print(printer)
-        
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            rect = printer.pageRect(QPrinter.Unit.Point)
+            doc.setPageSize(QSizeF(rect.width(), rect.height()))
+            doc.print(printer)
 
     def _build_html_table(self) -> str:
         # Group by (lot_number, level) -> list of row data

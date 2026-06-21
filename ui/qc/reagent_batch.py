@@ -696,14 +696,10 @@ class AcceptanceDialog(QDialog):
         box.setDefaultButton(QMessageBox.StandardButton.Yes if default_yes else QMessageBox.StandardButton.No)
         return box.exec() == QMessageBox.StandardButton.Yes
     def _print_pdf(self):
-        from PyQt6.QtPrintSupport import QPrinter
+        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
         from PyQt6.QtGui import QTextDocument, QPageSize, QPageLayout
         from PyQt6.QtCore import QMarginsF
-        from PyQt6.QtWidgets import QFileDialog
         import datetime
-        
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"允收記錄_{self.batch['lot_number']}.pdf", "PDF (*.pdf)")
-        if not path: return
         
         # 處理舊批號與新批號
         if self.read_only:
@@ -750,13 +746,13 @@ class AcceptanceDialog(QDialog):
             <div class="meta">
                 舊批號：{old_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{old_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{old_time_str}<br/>
                 新批號：{new_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{new_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{new_time_str}<br/>
-                允收時間：{acc_time} &nbsp;&nbsp;&nbsp;&nbsp; 執行人員：{acc_by}
+                允收時間：{acc_time} &nbsp;&nbsp;&nbsp;&nbsp; 執行人員：{acc_by}<br/>
             </div>
             
-            <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+            <table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; border: 1px solid black;">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="vertical-align: middle;">項目</th>
+                        <th rowspan="2" style="vertical-align: middle; border: 1px solid black;">項目</th>
                         <th colspan="3">Level 1</th>
                         <th colspan="3">Level 2</th>
                     </tr>
@@ -798,8 +794,6 @@ class AcceptanceDialog(QDialog):
         doc.setHtml(html)
         
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
         
         layout = QPageLayout()
         layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
@@ -807,10 +801,9 @@ class AcceptanceDialog(QDialog):
         layout.setMargins(QMarginsF(15, 15, 15, 15))
         printer.setPageLayout(layout)
         
-        doc.print(printer)
-        
-        from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.information(self, "匯出成功", f"PDF 已儲存至 {path}")
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            doc.print(printer)
 
 class AcceptanceViewDialog(QDialog):
     """查看允收紀錄"""

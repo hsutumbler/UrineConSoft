@@ -39,6 +39,7 @@ def init_mock_db():
     
     # Drop new feature tables to ensure a complete wipe
     cursor.execute("DROP TABLE IF EXISTS reagent_batch_acceptance")
+    cursor.execute("DROP TABLE IF EXISTS reagent_batch_history")
     cursor.execute("DROP TABLE IF EXISTS reagent_batches")
     cursor.execute("DROP TABLE IF EXISTS qc_batch_acceptance")
     cursor.execute("DROP TABLE IF EXISTS qc_target_settings")
@@ -199,6 +200,15 @@ def init_mock_db():
         notes TEXT,
         accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         accepted_by INT
+    );
+
+    CREATE TABLE reagent_batch_history (
+        history_id INT AUTO_INCREMENT PRIMARY KEY,
+        batch_id INT,
+        status INT,
+        snapshot_data JSON,
+        accepted_by INT,
+        accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
 

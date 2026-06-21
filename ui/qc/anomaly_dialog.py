@@ -179,7 +179,7 @@ class AnomalyRecordDialog(QDialog):
         else:
             btn_print = QPushButton("🖨️ 列印")
             btn_print.setObjectName("btn_primary")
-            btn_print.clicked.connect(self._export_pdf)
+            btn_print.clicked.connect(self._print_record)
             
             btn_layout.addWidget(btn_print)
             btn_layout.addWidget(btn_cancel)
@@ -421,9 +421,9 @@ class AnomalyRecordDialog(QDialog):
                 
                 <!-- Follow up -->
                 <tr>
-                    <td colspan="2" style="vertical-align: top;">
+                    <td colspan="2" style="vertical-align: top; height: 150px; border: 2px solid #000;">
                         <p style="margin: 5px 0;">當事人回覆追蹤情況(如果需要)與蓋章</p>
-                        <br><br><br>
+                        <br><br><br><br><br><br><br>
                     </td>
                 </tr>
             </table>

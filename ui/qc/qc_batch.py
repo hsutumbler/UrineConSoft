@@ -604,18 +604,15 @@ class QCAcceptanceDialog(QDialog):
         self.accept()
 
     def _print_report(self):
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+        from PyQt6.QtWidgets import QMessageBox
         from PyQt6.QtGui import QTextDocument, QPageLayout
-        from PyQt6.QtPrintSupport import QPrinter
+        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
         from PyQt6.QtCore import QMarginsF, QSizeF
         
         if not self.tab_widgets:
             QMessageBox.warning(self, "無資料", "目前沒有資料可以列印。")
             return
             
-        path, _ = QFileDialog.getSaveFileName(self, "匯出 PDF", f"{self.batch.get('lot_number', 'QC')}_品管允收.pdf", "PDF (*.pdf)")
-        if not path: return
-        
         acc_time = self.batch.get("accepted_at") or self.batch.get("created_at") or self.batch.get("open_date") or ""
         if hasattr(acc_time, 'strftime'):
             acc_time_str = acc_time.strftime("%Y/%m/%d %H:%M")
@@ -638,19 +635,24 @@ class QCAcceptanceDialog(QDialog):
         <html>
         <head>
             <style>
-                body {{ font-family: sans-serif; font-size: 12px; }}
-                h1 {{ font-size: 16pt; margin-bottom: 20px; text-align: center; }}
-                .info {{ font-size: 12pt; margin-bottom: 10px; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }}
-                th {{ border: 1px solid black; background-color: #eee; padding: 6px; text-align: center; font-size: 10pt; }}
-                td {{ border: 1px solid black; padding: 4px; text-align: center; font-size: 10pt; }}
-                h2 {{ font-size: 12pt; margin-top: 20px; margin-bottom: 10px; }}
+                body {{ font-family: 'Arial', 'Microsoft JhengHei', sans-serif; padding: 0pt 20pt 10pt 20pt; color: #000; font-size: 12pt; }}
+                h1 {{ text-align: center; color: #2C3E50; margin-top: 5pt; font-size: 16pt; margin-bottom: 5pt; }}
+                .info {{ font-size: 12pt; line-height: 1.2; margin-bottom: 10pt; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 5pt; margin-bottom: 20pt; border: 1px solid black; }}
+                th, td {{ border: 1px solid black; text-align: center; }}
+                th {{ font-weight: normal; background-color: #f2f2f2; color: #000; font-size: 10pt; padding: 6px; }}
+                td {{ font-size: 10pt; padding: 4px; }}
+                h2 {{ font-size: 14pt; margin-top: 20pt; margin-bottom: 5pt; color: #000; }}
             </style>
         </head>
         <body>
-            <h1>新批號品管液允收</h1>
-            <div class='info'>允收時間：{acc_time_str}</div>
-            <div class='info'>允收品管液批號：{lot}&nbsp;&nbsp;&nbsp;&nbsp;{level_text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{expiry_str}</div>
+            <h1>品管液允收紀錄</h1>
+            <br/>
+            
+            <div class="info">
+                允收時間：{acc_time_str}<br/>
+                允收品管液批號：{lot} &nbsp;&nbsp;&nbsp;&nbsp;{level_text} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{expiry_str}<br/><br/>
+            </div>
         """
         
         qual_items = []
@@ -687,17 +689,17 @@ class QCAcceptanceDialog(QDialog):
                         quant_data[item_name] = {}
                     quant_data[item_name][level_id] = [
                         t_quant.item(r, c).text() if t_quant.item(r, c) else ""
-                        for c in range(1, 9)
+                        for c in range(1, 9) # AM to SD
                     ]
                     
         if qual_items:
-            html += "<table><thead>"
+            html += "<table width='100%' cellpadding='6' cellspacing='0' border='1'><thead>"
             html += "<tr><th rowspan='2'>項目</th>"
             for lvl_id, lvl_name, _ in levels_ordered:
                 html += f"<th colspan='6'>{lvl_name}</th>"
             html += "</tr><tr>"
             for _ in levels_ordered:
-                html += "<th>N</th><th>正常數</th><th>異常數</th><th>合格率</th><th>允收目標</th><th>評估結果</th>"
+                html += "<th>N</th><th>正常</th><th>異常</th><th>合格</th><th>允收<br/>目標</th><th>評估<br/>結果</th>"
             html += "</tr></thead><tbody>"
             
             for item in qual_items:
@@ -705,6 +707,8 @@ class QCAcceptanceDialog(QDialog):
                 for lvl_id, _, _ in levels_ordered:
                     vals = qual_data[item].get(lvl_id, [""] * 6)
                     for v in vals:
+                        if v == "100.0%":
+                            v = "100%"
                         html += f"<td>{v}</td>"
                 html += "</tr>"
             html += "</tbody></table><br>"
@@ -712,8 +716,8 @@ class QCAcceptanceDialog(QDialog):
         if quant_items:
             for item in quant_items:
                 html += f"<h2>{item}</h2>"
-                html += "<table><thead><tr>"
-                html += "<th>Assay</th><th>Lot</th><th>N</th><th>TM</th><th>TSD</th><th>AM</th><th>ASD</th><th>CV</th><th>設定 Mean</th><th>設定 SD</th>"
+                html += "<table width='100%' cellpadding='6' cellspacing='0' border='1'><thead><tr>"
+                html += "<th>Assay</th><th>Lot</th><th>N</th><th>TM</th><th>TSD</th><th>AM</th><th>ASD</th><th>CV</th><th style='border-right: 1px solid black;'>設定 Mean</th><th style='border-right: 1px solid black;'>設定 SD</th>"
                 html += "</tr></thead><tbody>"
                 for lvl_id, lvl_name, batch_id in levels_ordered:
                     if lvl_id in quant_data[item]:
@@ -721,8 +725,11 @@ class QCAcceptanceDialog(QDialog):
                         assay_name = lvl_name.split('(')[0].strip()
                         html += "<tr>"
                         html += f"<td>{assay_name}</td><td>{batch_id}</td>"
-                        for v in vals:
-                            html += f"<td>{v}</td>"
+                        for i, v in enumerate(vals):
+                            if i == len(vals) - 1:
+                                html += f"<td style='border-right: 1px solid black;'>{v}</td>"
+                            else:
+                                html += f"<td>{v}</td>"
                         html += "</tr>"
                 html += "</tbody></table><br>"
                 
@@ -733,18 +740,22 @@ class QCAcceptanceDialog(QDialog):
         
         doc = QTextDocument()
         doc.setHtml(html)
-        doc.setDocumentMargin(0)
         
-        printer = QPrinter(QPrinter.PrinterMode.ScreenResolution)
-        printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)
-        printer.setOutputFileName(path)
-        printer.setPageMargins(QMarginsF(8, 10, 8, 10), QPageLayout.Unit.Millimeter)
+        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
+        from PyQt6.QtGui import QPageSize, QPageLayout
+        from PyQt6.QtCore import QMarginsF
         
-        rect = printer.pageRect(QPrinter.Unit.Point)
-        doc.setPageSize(QSizeF(rect.width(), rect.height()))
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         
-        doc.print(printer)
-        QMessageBox.information(self, "匯出成功", f"PDF 已成功匯出至：\n{path}")
+        layout = QPageLayout()
+        layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+        layout.setOrientation(QPageLayout.Orientation.Portrait)
+        layout.setMargins(QMarginsF(15, 15, 15, 15))
+        printer.setPageLayout(layout)
+        
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() == QPrintDialog.DialogCode.Accepted:
+            doc.print(printer)
 
 class TargetSettingDialog(QDialog):
     """設定品管範圍 (母子批號雙濃度)"""

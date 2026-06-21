@@ -156,6 +156,15 @@ CREATE TABLE IF NOT EXISTS reagent_batch_acceptance (
     accepted_by INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS reagent_batch_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_id INT,
+    status INT,
+    snapshot_data JSON,
+    accepted_by INT,
+    accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 

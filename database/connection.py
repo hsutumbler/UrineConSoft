@@ -191,6 +191,20 @@ def test_connection() -> tuple[bool, bool]:
         cursor = conn.cursor()
         cursor.execute("SELECT 1 AS ok")
         cursor.fetchone()
+        
+        # Proactively ensure reagent_batch_history table exists to prevent crash on delete/save
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS reagent_batch_history (
+                history_id INT AUTO_INCREMENT PRIMARY KEY,
+                batch_id INT,
+                status INT,
+                snapshot_data JSON,
+                accepted_by INT,
+                accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
+        conn.commit()
+        
         cursor.close()
         conn.close()
         DatabasePool._mysql_pool = pool
