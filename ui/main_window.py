@@ -291,16 +291,16 @@ class MainWindow(QMainWindow):
                 background: transparent; color: #6B6444;
                 border: none; border-radius: 8px;
                 text-align: left; padding: 0 10px;
-                font-size: 13px; font-weight: 500;
+                font-size: 13px; font-weight: bold;
             }}
             #nav_btn:hover {{ background: #EDE8CC; color: #2D2A1E; }}
             #nav_btn:checked {{
-                background: #FFF8D6; color: #9B7E23; font-weight: 600;
+                background: #FFF8D6; color: #9B7E23; font-weight: bold;
             }}
             #logout_btn {{
                 background: transparent; color: #6B6444;
                 border: none; text-align: left;
-                padding: 0 20px; font-size: 13px;
+                padding: 0 20px; font-size: 13px; font-weight: bold;
             }}
             #logout_btn:hover {{ background: #FFF5F5; color: #CC3333; }}
         """)

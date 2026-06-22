@@ -189,3 +189,29 @@
 2026-06-21 21:57:22,839 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-18 18:43:00...
 2026-06-21 21:57:22,849 [ERROR] UrineConSoft: MSSQL Connection Error: No module named 'pymssql'
 2026-06-21 21:57:22,849 [INFO] UrineConSoft: No new records to sync.
+2026-06-22 21:38:03,536 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:38:03,537 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 21:38:03,765 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:38:03,765 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 21:38:12,200 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-18 18:43:00...
+2026-06-22 21:38:12,201 [ERROR] UrineConSoft: MSSQL Connection Error: No module named 'pymssql'
+2026-06-22 21:38:12,202 [INFO] UrineConSoft: No new records to sync.
+2026-06-22 21:41:00,347 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:41:00,348 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 21:41:26,493 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-18 18:43:00...
+2026-06-22 21:41:26,496 [ERROR] UrineConSoft: MSSQL Connection Error: No module named 'pymssql'
+2026-06-22 21:41:26,497 [INFO] UrineConSoft: No new records to sync.
+2026-06-22 21:56:44,702 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:56:44,702 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 21:56:44,894 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:56:44,894 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 21:56:53,757 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-18 18:43:00...
+2026-06-22 21:56:53,758 [ERROR] UrineConSoft: MSSQL Connection Error: No module named 'pymssql'
+2026-06-22 21:56:53,758 [INFO] UrineConSoft: No new records to sync.
+2026-06-22 21:58:28,019 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 21:58:28,019 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-06-22 22:02:22,210 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-18 18:43:00...
+2026-06-22 22:02:22,212 [ERROR] UrineConSoft: MSSQL Connection Error: No module named 'pymssql'
+2026-06-22 22:02:22,213 [INFO] UrineConSoft: No new records to sync.
+2026-06-22 22:05:30,186 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] No module named 'pymssql'
+2026-06-22 22:05:30,187 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
