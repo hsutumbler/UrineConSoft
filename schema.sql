@@ -206,3 +206,9 @@ INSERT INTO Phrase (txt) VALUES
 -- 4. 本地儀器對應表 (I003對應到77Urine_1)
 INSERT INTO MhMaster (mhId, mhName, od, mhcode, DepartmentID) VALUES 
 ('I003', '77Urine_1', 'EDAD', '7701', 'LB');
+
+CREATE TABLE IF NOT EXISTS DailyQC_notes (
+    dqcId BIGINT PRIMARY KEY,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -145,18 +145,20 @@ class ReagentBatchService:
             cur.execute("DELETE FROM reagent_batches WHERE batch_id=%s", (batch_id,))
 
     @staticmethod
-    def get_recent_qc_timepoints(reagent_batch_id: int, limit: int = 3) -> list:
+    def get_recent_qc_timepoints(reagent_batch_id: int, level: str, limit: int = 5) -> list:
         """獲取最近 N 次獨立的品管時間點"""
         with DBContext() as (_, cur):
             cur.execute(
-                "SELECT DISTINCT iDate AS result_date FROM DailyQC "
-                "ORDER BY iDate DESC LIMIT %s",
-                (limit,)
+                "SELECT DISTINCT d.iDate AS result_date FROM DailyQC d "
+                "JOIN LotTable b ON d.lot = b.lot_id "
+                "WHERE b.lot_Level = %s "
+                "ORDER BY d.iDate DESC LIMIT %s",
+                (level, limit)
             )
             return [row["result_date"] for row in cur.fetchall()]
 
     @staticmethod
-    def get_qc_results_by_time(reagent_batch_id: int, result_date) -> dict:
+    def get_qc_results_by_time(reagent_batch_id: int, level: str, result_date) -> dict:
         """獲取特定時間點下的所有品管結果與目標範圍 (自 DailyQC 抓取)"""
         with DBContext() as (_, cur):
             cur.execute(
@@ -166,9 +168,9 @@ class ReagentBatchService:
                 "d.iValue AS measured_value, d.Check_Type AS qualitative_result "
                 "FROM DailyQC d "
                 "JOIN MhItem re ON d.mtId = re.mtId "
-                "LEFT JOIN LotTable b ON d.lot = b.lot_id "
-                "WHERE d.iDate=%s",
-                (result_date,)
+                "JOIN LotTable b ON d.lot = b.lot_id "
+                "WHERE b.lot_Level=%s AND d.iDate=%s",
+                (level, result_date)
             )
             rows = cur.fetchall()
             
@@ -709,19 +711,37 @@ class QCResultService:
             
             cur.execute(query, params)
             rows = cur.fetchall()
+            
+            if not rows:
+                return []
+
+            # ─── 修正 N+1 查詢問題：一次撈出所有批號的目標值，再在 Python 端合併 ───
+            # 注意：DailyQC.lot 與 LotTest.lot 可能大小寫不一致 (e.g. 'c252881' vs 'C252881')
+            # MySQL 排序不分大小寫，但 Python dict key 嚴格區分。解法：統一小寫正規化
+            unique_lots = list({r["qc_batch_id"] for r in rows if r["qc_batch_id"]})
+            target_map = {}  # lot_id.lower() -> target row
+            if unique_lots:
+                placeholders = ",".join(["%s"] * len(unique_lots))
+                lower_lots = [l.lower() for l in unique_lots]
+                cur.execute(
+                    f"SELECT lt.lot, lt.`Range` AS semi_target_min, lt.`Range` AS semi_target_max, "
+                    f"lt.tMean, lt.tSd, lt.TEA, lt.iDateTime "
+                    f"FROM LotTest lt "
+                    f"INNER JOIN ("
+                    f"  SELECT lot, MAX(iDateTime) AS max_dt FROM LotTest WHERE mtId=%s AND LOWER(lot) IN ({placeholders}) GROUP BY lot"
+                    f") latest ON lt.lot = latest.lot AND lt.iDateTime = latest.max_dt "
+                    f"WHERE lt.mtId=%s AND LOWER(lt.lot) IN ({placeholders})",
+                    [reagent_id] + lower_lots + [reagent_id] + lower_lots
+                )
+                for t in cur.fetchall():
+                    tgt = TargetSettingService._parse_semi_range(t)
+                    target_map[t["lot"].lower()] = tgt  # 統一小寫儲存
 
             # 動態重新計算 is_accepted，覆寫儀器傳來的 sdFlag
-            from services.qc_service import TargetSettingService
             for r in rows:
                 r["is_accepted"] = r["is_accepted_raw"]
-                
-                # Fetch target for this specific lot
-                cur.execute(
-                    "SELECT `Range` AS semi_target_min, `Range` AS semi_target_max, tMean, tSd, TEA "
-                    "FROM LotTest WHERE mtId=%s AND lot=%s ORDER BY iDateTime DESC LIMIT 1",
-                    (reagent_id, r["qc_batch_id"])
-                )
-                tgt = TargetSettingService._parse_semi_range(cur.fetchone())
+                lot_key = r["qc_batch_id"].lower() if r["qc_batch_id"] else None
+                tgt = target_map.get(lot_key)  # 統一小寫查詢
                 
                 if tgt:
                     if r["param_type"] == 2 or r["param_type"] == 3: # 文字或數值半定量
@@ -752,6 +772,9 @@ class QCResultService:
                             z = (float(r["measured_value"]) - float(tgt["tm"])) / float(tgt["tsd"])
                             r["is_accepted"] = 1 if abs(z) <= 2 else 0
             return rows
+
+
+
 
     @staticmethod
     def update_note(result_id: int, notes: str):

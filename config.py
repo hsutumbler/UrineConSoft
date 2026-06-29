@@ -15,13 +15,25 @@ config_parser = configparser.ConfigParser()
 # 系統環境設定: 'TEST' 或 'PROD' (主要影響除錯模式或後續其它設定)
 ENV = "PROD"
 
-# 預設本地 MySQL 設定 (測試用)
+# 醫院 MySQL 設定 (測試用)
+#DB_CONFIG = {
+#    "host":               "10.9.8.100",  # 修改為醫院 ( MySQL 與 MSSQL) 的 IP
+#    "port":               3306,
+#    "user":               "User_admin",     # 已修正為半形英文字母
+#    "password":           "12345678",
+#    "database":           "qc_system",      # 已經幫您改回 qc_system，與匯出的資料庫名稱保持一致
+#    "charset":            "utf8mb4",
+#    "connection_timeout": 10,
+#}
+
+# 本地 MySQL 設定 (測試用)
 DB_CONFIG = {
-    "host":               "127.0.0.1",
+    "host":               "127.0.0.1",  # 本地Macbook Air MySQL 的 IP
     "port":               3306,
     "user":               "urine_admin",
     "password":           "12345678",
     "database":           "qc_system",
+
     "charset":            "utf8mb4",
     "connection_timeout": 10,
     "use_pure":           True,

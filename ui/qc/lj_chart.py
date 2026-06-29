@@ -35,10 +35,33 @@ class LJCSyncThread(QThread):
             self.finished_sync.emit()
 
 
+class LJCDataThread(QThread):
+    """Background thread to load chart data without blocking the UI."""
+    data_ready = pyqtSignal(object)  # emits the loaded data dict
+
+    def __init__(self, iqi_id, from_date, to_date, instrument_id):
+        super().__init__()
+        self.iqi_id = iqi_id
+        self.from_date = from_date
+        self.to_date = to_date
+        self.instrument_id = instrument_id
+
+    def run(self):
+        try:
+            results = QCResultService.get_results(
+                self.iqi_id, self.from_date, self.to_date, self.instrument_id
+            )
+            self.data_ready.emit({"ok": True, "results": results})
+        except Exception as e:
+            logger.error(f"LJCDataThread error: {e}")
+            self.data_ready.emit({"ok": False, "results": []})
+
+
 class LJChartPage(BasePage):
     def __init__(self, user: dict):
         super().__init__("品管圖 (L-J Chart)", "", user)
         self._instruments = MasterService.get_instruments()
+        self._draw_generation = 0
         self._build()
 
     def _build(self):
@@ -154,25 +177,79 @@ class LJChartPage(BasePage):
         if not item:
             self._clear_chart()
             return
+
+        rdata = item.data(Qt.ItemDataRole.UserRole)
+        from_date = self.date_from.date().toPyDate()
+        to_date = self.date_to.date().toPyDate()
+        inst_id = self.cmb_inst.currentData()
+        levels = sorted(rdata["iqis"].keys())
+
+        # Cancel any existing load thread
+        if hasattr(self, '_load_threads'):
+            for t in self._load_threads:
+                t.quit()
+        self._load_threads = []
+        self._pending_levels = len(levels)
+        self._level_results = {}
+        self._reset_scroll = reset_scroll
+        self._rdata_for_draw = rdata
+        
+        self._draw_generation += 1
+        current_gen = self._draw_generation
+
+        # Show loading indicator
+        self._clear_chart()
+        self._hover_info = []
+        self._chart_widgets = []
+        loading_lbl = QLabel("⏳ 資料載入中，請稍候...")
+        loading_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        loading_lbl.setStyleSheet("font-size: 18px; color: #888; padding: 40px;")
+        loading_lbl.setObjectName("_loading_label")
+        self.charts_layout.addWidget(loading_lbl)
+
+        # Fire one background thread per level
+        for level_name in levels:
+            iqi = rdata["iqis"][level_name]
+            thread = LJCDataThread(iqi["iqi_id"], from_date, to_date, inst_id)
+            thread.data_ready.connect(
+                lambda payload, ln=level_name, iqi_=iqi, gen=current_gen: self._on_level_data_ready(payload, ln, iqi_, gen)
+            )
+            self._load_threads.append(thread)
+            thread.start()
+
+    def _on_level_data_ready(self, payload, level_name, iqi, generation):
+        """Called on main thread when one level's data finishes loading."""
+        if generation != self._draw_generation:
+            # A newer draw was triggered, ignore this stale result
+            return
             
-        # Store scrollbar states to restore after redraw (e.g., after adding a note)
+        self._level_results[level_name] = (payload.get("results", []), iqi)
+        self._pending_levels -= 1
+        if self._pending_levels <= 0:
+            self._render_all_levels()
+
+    def _render_all_levels(self):
+        """Runs on main thread after all levels loaded. Renders the charts."""
+        # Remove loading label
+        for i in reversed(range(self.charts_layout.count())):
+            w = self.charts_layout.itemAt(i).widget()
+            if w and w.objectName() == "_loading_label":
+                w.deleteLater()
+
+        rdata = self._rdata_for_draw
+        reset_scroll = self._reset_scroll
+        levels = sorted(self._level_results.keys())
+
+        # Store scrollbar states
         old_scrolls = {}
         if not reset_scroll and hasattr(self, '_chart_widgets'):
             for i, cw in enumerate(self._chart_widgets):
                 if cw['scrollbar'].isVisible():
                     old_scrolls[i] = cw['scrollbar'].value()
-                    
-        self._clear_chart()
+
         self._hover_info = []
         self._chart_widgets = []
-        
-        rdata = item.data(Qt.ItemDataRole.UserRole)
-        from_date = self.date_from.date().toPyDate()
-        to_date = self.date_to.date().toPyDate()
-        
-        levels = list(rdata["iqis"].keys())
-        levels.sort()  # Ensures Level 1 comes before Level 2
-        
+
         from matplotlib.gridspec import GridSpec
         
         # 取得目前的 active_batch 資訊
@@ -199,7 +276,8 @@ class LJChartPage(BasePage):
         selected_lots = self.cmb_batch.currentData()
         
         for idx, level_name in enumerate(levels):
-            iqi = rdata["iqis"][level_name]
+            results, iqi = self._level_results[level_name]
+
             
             # Create independent UI for this level
             level_widget = QWidget()
@@ -276,8 +354,8 @@ class LJChartPage(BasePage):
                                 fontsize=9, zorder=20)
             annot.set_visible(False)
             
-            inst_id = self.cmb_inst.currentData()
-            results = QCResultService.get_results(iqi["iqi_id"], from_date, to_date, inst_id)
+            # results already loaded by background thread
+
             
             if selected_lots:
                 results = [r for r in results if r.get("base_lot_number") in selected_lots]

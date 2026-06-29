@@ -247,12 +247,16 @@ class AcceptanceDialog(QDialog):
         # 取得現有使用中的批號
         if not self.read_only:
             self.active_batch = ReagentBatchService.get_active()
-            self.active_times = ReagentBatchService.get_recent_qc_timepoints(self.active_batch['batch_id']) if self.active_batch else []
-            self.new_times = ReagentBatchService.get_recent_qc_timepoints(self.batch['batch_id'])
+            self.active_times_l1 = ReagentBatchService.get_recent_qc_timepoints(self.active_batch['batch_id'], '1') if self.active_batch else []
+            self.active_times_l2 = ReagentBatchService.get_recent_qc_timepoints(self.active_batch['batch_id'], '2') if self.active_batch else []
+            self.new_times_l1 = ReagentBatchService.get_recent_qc_timepoints(self.batch['batch_id'], '1')
+            self.new_times_l2 = ReagentBatchService.get_recent_qc_timepoints(self.batch['batch_id'], '2')
         else:
             self.active_batch = None
-            self.active_times = []
-            self.new_times = []
+            self.active_times_l1 = []
+            self.active_times_l2 = []
+            self.new_times_l1 = []
+            self.new_times_l2 = []
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -261,6 +265,23 @@ class AcceptanceDialog(QDialog):
         # 上方控制區
         ctrl_layout = QHBoxLayout()
         
+        def _setup_cmb(cmb, times, snapshot_key):
+            if self.read_only:
+                t_str = self._snapshot_data.get(snapshot_key)
+                if t_str:
+                    cmb.addItem(t_str.replace("T", " ")[:16], t_str)
+            else:
+                for t in times:
+                    cmb.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
+            
+            if cmb.count() == 0:
+                cmb.addItem("無數據", None)
+                cmb.setEnabled(False)
+            else:
+                if not self.read_only and cmb.count() > 1:
+                    cmb.setCurrentIndex(0)
+                cmb.currentIndexChanged.connect(self._update_table)
+
         # 現有批號
         active_grp = QGroupBox("現有批號 (Active Batch)")
         active_grp.setStyleSheet("font-weight: bold;")
@@ -271,27 +292,22 @@ class AcceptanceDialog(QDialog):
         
         ctrl_layout.addWidget(active_grp)
         
-        self.cmb_active = QComboBox()
-        if self.read_only:
-            t_str = self._snapshot_data.get("active_time")
-            if t_str:
-                self.cmb_active.addItem(t_str.replace("T", " ")[:16], t_str)
-        else:
-            for t in self.active_times:
-                self.cmb_active.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
-                
-        if self.cmb_active.count() == 0:
-            self.cmb_active.addItem("無品管數據", None)
-            self.cmb_active.setEnabled(False)
-        else:
-            if not self.read_only and self.cmb_active.count() > 1:
-                self.cmb_active.setCurrentIndex(1)
-            self.cmb_active.currentIndexChanged.connect(self._update_table)
+        self.cmb_active_l1 = QComboBox()
+        self.cmb_active_l2 = QComboBox()
+        _setup_cmb(self.cmb_active_l1, self.active_times_l1, "active_time_l1")
+        _setup_cmb(self.cmb_active_l2, self.active_times_l2, "active_time_l2")
         
-        time_row1 = QHBoxLayout()
-        time_row1.addWidget(QLabel("品管時間點:"))
-        time_row1.addWidget(self.cmb_active)
-        al.addLayout(time_row1)
+        time_row1_l1 = QHBoxLayout()
+        time_row1_l1.addWidget(QLabel("L1 時間:"))
+        time_row1_l1.addWidget(self.cmb_active_l1)
+        time_row1_l1.addStretch()
+        al.addLayout(time_row1_l1)
+        
+        time_row1_l2 = QHBoxLayout()
+        time_row1_l2.addWidget(QLabel("L2 時間:"))
+        time_row1_l2.addWidget(self.cmb_active_l2)
+        time_row1_l2.addStretch()
+        al.addLayout(time_row1_l2)
 
         # 新進批號
         new_grp = QGroupBox("新進批號 (New Batch)")
@@ -299,25 +315,23 @@ class AcceptanceDialog(QDialog):
         nl = QVBoxLayout(new_grp)
         nl.addWidget(QLabel(f"批號: {self.batch['lot_number']}"))
         
-        self.cmb_new = QComboBox()
-        if self.read_only:
-            t_str = self._snapshot_data.get("new_time")
-            if t_str:
-                self.cmb_new.addItem(t_str.replace("T", " ")[:16], t_str)
-        else:
-            for t in self.new_times:
-                self.cmb_new.addItem(t.strftime("%Y-%m-%d %H:%M"), t)
-                
-        if self.cmb_new.count() == 0:
-            self.cmb_new.addItem("無品管數據", None)
-            self.cmb_new.setEnabled(False)
-        else:
-            self.cmb_new.currentIndexChanged.connect(self._update_table)
-            
-        time_row2 = QHBoxLayout()
-        time_row2.addWidget(QLabel("品管時間點:"))
-        time_row2.addWidget(self.cmb_new)
-        nl.addLayout(time_row2)
+        self.cmb_new_l1 = QComboBox()
+        self.cmb_new_l2 = QComboBox()
+        _setup_cmb(self.cmb_new_l1, self.new_times_l1, "new_time_l1")
+        _setup_cmb(self.cmb_new_l2, self.new_times_l2, "new_time_l2")
+        
+        time_row2_l1 = QHBoxLayout()
+        time_row2_l1.addWidget(QLabel("L1 時間:"))
+        time_row2_l1.addWidget(self.cmb_new_l1)
+        time_row2_l1.addStretch()
+        nl.addLayout(time_row2_l1)
+        
+        time_row2_l2 = QHBoxLayout()
+        time_row2_l2.addWidget(QLabel("L2 時間:"))
+        time_row2_l2.addWidget(self.cmb_new_l2)
+        time_row2_l2.addStretch()
+        nl.addLayout(time_row2_l2)
+        
         ctrl_layout.addWidget(new_grp)
         layout.addLayout(ctrl_layout)
 
@@ -402,15 +416,11 @@ class AcceptanceDialog(QDialog):
         
         # Bottom controls
         btn_layout = QHBoxLayout()
-        btn_print = QPushButton("🖨️ 列印")
-        btn_print.clicked.connect(self._print_pdf)
         
         if self.read_only:
-            btn_print.setObjectName("btn_primary")
             btn_close = QPushButton("關閉")
             btn_close.clicked.connect(self.accept)
             btn_layout.addStretch()
-            btn_layout.addWidget(btn_print)
             btn_layout.addWidget(btn_close)
         else:
             btn_accept = QPushButton("允收")
@@ -423,7 +433,6 @@ class AcceptanceDialog(QDialog):
             btn_cancel.clicked.connect(self.reject)
             btn_reject.clicked.connect(lambda: self._save_decision(0))
             
-            btn_layout.addWidget(btn_print)
             btn_layout.addStretch()
             btn_layout.addWidget(btn_reject)
             btn_layout.addWidget(btn_cancel)
@@ -436,8 +445,10 @@ class AcceptanceDialog(QDialog):
         layout.addLayout(btn_layout)
         
         if self.read_only:
-            self.cmb_active.setEnabled(False)
-            self.cmb_new.setEnabled(False)
+            self.cmb_active_l1.setEnabled(False)
+            self.cmb_active_l2.setEnabled(False)
+            self.cmb_new_l1.setEnabled(False)
+            self.cmb_new_l2.setEnabled(False)
             self._load_snapshot()
 
     def _build_table_headers(self):
@@ -560,16 +571,16 @@ class AcceptanceDialog(QDialog):
         if self.read_only:
             return
             
-        active_time = self.cmb_active.currentData()
-        new_time = self.cmb_new.currentData()
+        a_t1 = self.cmb_active_l1.currentData()
+        a_t2 = self.cmb_active_l2.currentData()
+        n_t1 = self.cmb_new_l1.currentData()
+        n_t2 = self.cmb_new_l2.currentData()
         
-        active_data = {}
-        if self.active_batch and active_time:
-            active_data = ReagentBatchService.get_qc_results_by_time(self.active_batch['batch_id'], active_time)
-            
-        new_data = {}
-        if new_time:
-            new_data = ReagentBatchService.get_qc_results_by_time(self.batch['batch_id'], new_time)
+        a_data_l1 = ReagentBatchService.get_qc_results_by_time(self.active_batch['batch_id'], '1', a_t1) if self.active_batch and a_t1 else {}
+        a_data_l2 = ReagentBatchService.get_qc_results_by_time(self.active_batch['batch_id'], '2', a_t2) if self.active_batch and a_t2 else {}
+        
+        n_data_l1 = ReagentBatchService.get_qc_results_by_time(self.batch['batch_id'], '1', n_t1) if n_t1 else {}
+        n_data_l2 = ReagentBatchService.get_qc_results_by_time(self.batch['batch_id'], '2', n_t2) if n_t2 else {}
 
         from services.qc_service import MasterService
         reagents = MasterService.get_reagents()
@@ -579,17 +590,20 @@ class AcceptanceDialog(QDialog):
         
         self._snapshot_data = {
             "active_batch": self.active_batch['lot_number'] if self.active_batch else None,
-            "active_time": active_time.isoformat() if active_time else None,
+            "active_time_l1": a_t1.isoformat() if a_t1 else None,
+            "active_time_l2": a_t2.isoformat() if a_t2 else None,
             "new_batch": self.batch['lot_number'],
-            "new_time": new_time.isoformat() if new_time else None,
+            "new_time_l1": n_t1.isoformat() if n_t1 else None,
+            "new_time_l2": n_t2.isoformat() if n_t2 else None,
             "rows": []
         }
         
         for r, reagent in enumerate(reagents):
             rname = reagent["reagent_name"]
             
-            a_row = active_data.get(rname, {})
-            n_row = new_data.get(rname, {})
+            # 排除 WBC 與 RBC
+            if rname in ("WBC", "RBC"):
+                continue
             
             def fmt_val(v):
                 from decimal import Decimal
@@ -599,11 +613,11 @@ class AcceptanceDialog(QDialog):
                     return f"{float(v):.{dec}f}"
                 return str(v)
 
-            a_l1 = fmt_val(a_row.get("Level 1"))
-            n_l1 = fmt_val(n_row.get("Level 1"))
+            a_l1 = fmt_val(a_data_l1.get(rname, {}).get("Level 1"))
+            n_l1 = fmt_val(n_data_l1.get(rname, {}).get("Level 1"))
             
-            a_l2 = fmt_val(a_row.get("Level 2"))
-            n_l2 = fmt_val(n_row.get("Level 2"))
+            a_l2 = fmt_val(a_data_l2.get(rname, {}).get("Level 2"))
+            n_l2 = fmt_val(n_data_l2.get(rname, {}).get("Level 2"))
             
             def calc_diff(v1, v2, rname):
                 if v1 == "—" or v2 == "—" or v1 is None or v2 is None:
@@ -720,11 +734,15 @@ class AcceptanceDialog(QDialog):
         acc_time = self.batch.get('accepted_at', '未允收')
         acc_by = self.batch.get('accepted_by_name', '未設定')
         
-        old_time = self._snapshot_data.get("active_time")
-        old_time_str = old_time.replace("T", " ")[:16] if old_time else "無"
+        old_time_l1 = self._snapshot_data.get("active_time_l1")
+        old_t1_str = old_time_l1.replace("T", " ")[:16] if old_time_l1 else "無"
+        old_time_l2 = self._snapshot_data.get("active_time_l2")
+        old_t2_str = old_time_l2.replace("T", " ")[:16] if old_time_l2 else "無"
         
-        new_time = self._snapshot_data.get("new_time")
-        new_time_str = new_time.replace("T", " ")[:16] if new_time else "無"
+        new_time_l1 = self._snapshot_data.get("new_time_l1")
+        new_t1_str = new_time_l1.replace("T", " ")[:16] if new_time_l1 else "無"
+        new_time_l2 = self._snapshot_data.get("new_time_l2")
+        new_t2_str = new_time_l2.replace("T", " ")[:16] if new_time_l2 else "無"
         
         html = f"""
         <html>
@@ -732,21 +750,23 @@ class AcceptanceDialog(QDialog):
             <style>
                 body {{ font-family: 'Arial', 'Microsoft JhengHei', sans-serif; padding: 0pt 20pt 10pt 20pt; color: #000; font-size: 12pt; }}
                 h1 {{ text-align: center; color: #2C3E50; margin-top: 5pt; font-size: 16pt; margin-bottom: 5pt; }}
-                .meta {{ font-size: 12pt; line-height: 1.2; margin-bottom: 10pt; }}
-                table {{ width: 100%; border-collapse: collapse; margin-top: 5pt; font-size: 12pt; border: 1px solid black; }}
-                th, td {{ border: 1px solid black; text-align: center; }}
-                th {{ font-weight: normal; color: #000; }}
+                .meta {{ font-size: 11pt; line-height: 1.3; margin-bottom: 10pt; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 5pt; font-size: 11pt; border: 1px solid black; }}
+                th, td {{ border: 1px solid black; text-align: center; padding: 4pt; }}
+                th {{ font-weight: normal; color: #000; background-color: #f0f0f0; }}
                 .highlight {{ font-weight: bold; color: #E74C3C; }}
             </style>
         </head>
         <body>
             <h1>試劑允收紀錄</h1>
-            <br/>
             
             <div class="meta">
-                舊批號：{old_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{old_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{old_time_str}<br/>
-                新批號：{new_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{new_exp} &nbsp;&nbsp;&nbsp;&nbsp;品管時間：{new_time_str}<br/>
-                允收時間：{acc_time} &nbsp;&nbsp;&nbsp;&nbsp; 執行人員：{acc_by}<br/>
+                <b>【現有批號】</b> {old_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{old_exp}<br/>
+                &nbsp; L1 品管時間：{old_t1_str} &nbsp;&nbsp;&nbsp;&nbsp; L2 品管時間：{old_t2_str}<br/>
+                <b>【新進批號】</b> {new_lot} &nbsp;&nbsp;&nbsp;&nbsp;穩定效期：{new_exp}<br/>
+                &nbsp; L1 品管時間：{new_t1_str} &nbsp;&nbsp;&nbsp;&nbsp; L2 品管時間：{new_t2_str}<br/>
+                <br/>
+                <b>允收時間：</b> {acc_time} &nbsp;&nbsp;&nbsp;&nbsp; <b>執行人員：</b> {acc_by}
             </div>
             
             <table width="100%" cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; border: 1px solid black;">
