@@ -25,30 +25,56 @@ class UserManagementPage(BasePage):
         self.btn_edit.setEnabled(False)
         self.btn_edit.clicked.connect(self._edit_selected)
 
-        self.btn_chpw = QPushButton("🔑 修改密碼")
-        self.btn_chpw.setEnabled(False)
-        self.btn_chpw.clicked.connect(self._change_password)
+        self.btn_toggle_active = QPushButton("⛔ 停用 / 啟用")
+        self.btn_toggle_active.setEnabled(False)
+        self.btn_toggle_active.clicked.connect(self._toggle_active)
 
-        btn_refresh = QPushButton("🔄 重新整理")
-        btn_refresh.clicked.connect(self._load)
+        self.chk_show_inactive = QCheckBox("顯示已停用帳號")
+        self.chk_show_inactive.stateChanged.connect(self._filter_users)
+
+        self.txt_search = QLineEdit()
+        self.txt_search.setPlaceholderText("🔍 搜尋帳號或姓名...")
+        self.txt_search.setFixedWidth(200)
+        self.txt_search.textChanged.connect(self._filter_users)
 
         toolbar.addWidget(btn_add)
         toolbar.addWidget(self.btn_edit)
-        toolbar.addWidget(self.btn_chpw)
-        toolbar.addWidget(btn_refresh)
+        toolbar.addWidget(self.btn_toggle_active)
         toolbar.addStretch()
+        toolbar.addWidget(self.chk_show_inactive)
+        toolbar.addWidget(self.txt_search)
         self.content_layout.addLayout(toolbar)
 
         self.table = self.make_table(["帳號", "姓名", "角色", "狀態"])
         self.table.itemSelectionChanged.connect(self._on_selection)
         self.table.cellDoubleClicked.connect(lambda r, c: self._edit_selected())
         self.content_layout.addWidget(self.table)
+        
+        self._all_users = []
         self._load()
 
     def _load(self):
-        users = AuthService.get_all_users()
+        self._all_users = AuthService.get_all_users()
+        self._filter_users()
+
+    def _filter_users(self):
+        search_text = self.txt_search.text().strip().lower()
+        show_inactive = self.chk_show_inactive.isChecked()
+        
+        filtered = []
+        for u in self._all_users:
+            if not show_inactive and not u["is_active"]:
+                continue
+            if search_text:
+                if search_text not in u["employee_id"].lower() and search_text not in u["name"].lower():
+                    continue
+            filtered.append(u)
+            
+        # 排序：啟用的在上，停用的在下，接著以員工編號排序
+        filtered.sort(key=lambda x: (not x["is_active"], x["employee_id"]))
+
         self.table.setRowCount(0)
-        for r, u in enumerate(users):
+        for r, u in enumerate(filtered):
             self.table.insertRow(r)
             vals = [
                 u["employee_id"], u["name"],
@@ -60,13 +86,23 @@ class UserManagementPage(BasePage):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 if c == 0:
                     item.setData(Qt.ItemDataRole.UserRole, u)
+                if not u["is_active"]:
+                    item.setForeground(Qt.GlobalColor.gray)
                 self.table.setItem(r, c, item)
         self._on_selection()
 
     def _on_selection(self):
         has = len(self.table.selectedItems()) > 0
         self.btn_edit.setEnabled(has)
-        self.btn_chpw.setEnabled(has)
+        self.btn_toggle_active.setEnabled(has)
+
+    def _toggle_active(self):
+        u = self._get_selected()
+        if not u:
+            return
+        new_status = not u["is_active"]
+        AuthService.update_user(u["user_id"], u["name"], u["role"], new_status)
+        self._load()
 
     def _get_selected(self):
         row = self.table.currentRow()
@@ -94,16 +130,9 @@ class UserManagementPage(BasePage):
         if dlg.exec():
             d = dlg.get_data()
             AuthService.update_user(u["user_id"], d["name"], d["role"], d["is_active"])
+            if d.get("password"):
+                AuthService.change_password(u["user_id"], d["password"])
             self._load()
-
-    def _change_password(self):
-        u = self._get_selected()
-        if not u:
-            return
-        dlg = ChangePasswordDialog(self, u["name"])
-        if dlg.exec():
-            AuthService.change_password(u["user_id"], dlg.get_password())
-            self.alert("成功", "密碼已修改。")
 
     def on_page_show(self):
         self._load()
@@ -173,43 +202,4 @@ class UserDialog(QDialog):
         }
 
 
-class ChangePasswordDialog(QDialog):
-    def __init__(self, parent, user_name: str):
-        super().__init__(parent)
-        self.setWindowTitle(f"修改密碼 — {user_name}")
-        self.setFixedWidth(340)
-        self.setStyleSheet(PAGE_STYLE)
-        form = QFormLayout(self)
-        form.setSpacing(12)
-        form.setContentsMargins(24, 24, 24, 24)
 
-        self.f_pw1 = QLineEdit()
-        self.f_pw1.setEchoMode(QLineEdit.EchoMode.Password)
-        self.f_pw2 = QLineEdit()
-        self.f_pw2.setEchoMode(QLineEdit.EchoMode.Password)
-        self.f_pw2.setPlaceholderText("請再輸入一次")
-
-        form.addRow("新密碼 *",   self.f_pw1)
-        form.addRow("確認密碼 *", self.f_pw2)
-
-        btn_row = QHBoxLayout()
-        btn_ok = QPushButton("確認")
-        btn_ok.setObjectName("btn_primary")
-        btn_cancel = QPushButton("取消")
-        btn_ok.clicked.connect(self._validate)
-        btn_cancel.clicked.connect(self.reject)
-        btn_row.addWidget(btn_ok)
-        btn_row.addWidget(btn_cancel)
-        form.addRow(btn_row)
-
-    def _validate(self):
-        if not self.f_pw1.text():
-            QMessageBox.warning(self, "驗證", "請輸入新密碼")
-            return
-        if self.f_pw1.text() != self.f_pw2.text():
-            QMessageBox.warning(self, "驗證", "兩次密碼不一致")
-            return
-        self.accept()
-
-    def get_password(self) -> str:
-        return self.f_pw1.text()

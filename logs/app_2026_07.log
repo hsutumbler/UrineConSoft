@@ -1,0 +1,19 @@
+2026-07-01 16:49:41,965 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.1.50:3306' (timed out)
+2026-07-01 16:49:52,218 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.1.50:3306' (timed out)
+2026-07-01 16:51:27,498 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.0.113:3306' (timed out)
+2026-07-01 16:51:37,698 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.0.113:3306' (timed out)
+2026-07-01 16:53:10,114 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.0.113:3306' (timed out)
+2026-07-01 16:53:20,293 [ERROR] UrineConSoft: [❌ MySQL 連線失敗] 2003: Can't connect to MySQL server on '192.168.0.113:3306' (timed out)
+2026-07-01 17:01:28,603 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-07-01 01:45:55...
+2026-07-01 17:01:28,997 [INFO] UrineConSoft: Successfully synced 11 records to MySQL DailyQC.
+2026-07-01 17:11:55,547 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-07-01 01:45:55...
+2026-07-01 17:11:56,088 [INFO] UrineConSoft: Successfully synced 11 records to MySQL DailyQC.
+2026-07-01 17:21:21,337 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-07-01 01:45:55...
+2026-07-01 17:21:21,712 [INFO] UrineConSoft: Successfully synced 11 records to MySQL DailyQC.
+2026-07-01 22:19:58,149 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] (20009, b'DB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\nDB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\n')
+2026-07-01 22:19:58,149 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-07-01 22:20:03,272 [ERROR] UrineConSoft: [❌ MSSQL 連線失敗] (20009, b'DB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\nDB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\n')
+2026-07-01 22:20:03,272 [WARNING] UrineConSoft: [⚠️ 注意] MySQL 成功，但 MSSQL 失敗，部分同步功能將受限。
+2026-07-01 22:20:09,077 [INFO] UrineConSoft: Syncing records from MS SQL since 2026-06-23 04:06:19...
+2026-07-01 22:20:14,079 [ERROR] UrineConSoft: MSSQL Connection Error: (20009, b'DB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\nDB-Lib error message 20009, severity 9:\nUnable to connect: Adaptive Server is unavailable or does not exist (10.9.8.100)\nNet-Lib error during Operation timed out (60)\n')
+2026-07-01 22:20:14,080 [INFO] UrineConSoft: No new records to sync.

@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QDateEdit, QPushButton, QSplitter, QListWidget, QListWidgetItem,
     QFrame, QMessageBox, QScrollBar, QMenu, QInputDialog, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QDate, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QDate, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QColor, QCursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -137,6 +137,7 @@ class LJChartPage(BasePage):
         self.charts_container = QFrame()
         self.charts_container.setObjectName("section_card")
         self.charts_layout = QVBoxLayout(self.charts_container)
+        self.charts_layout.setContentsMargins(0, 0, 0, 0)  # 移除外圍留白
         
         splitter.addWidget(self.charts_container)
         splitter.setSizes([90, 910])
@@ -197,15 +198,13 @@ class LJChartPage(BasePage):
         self._draw_generation += 1
         current_gen = self._draw_generation
 
-        # Show loading indicator
-        self._clear_chart()
-        self._hover_info = []
-        self._chart_widgets = []
-        loading_lbl = QLabel("⏳ 資料載入中，請稍候...")
-        loading_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        loading_lbl.setStyleSheet("font-size: 18px; color: #888; padding: 40px;")
-        loading_lbl.setObjectName("_loading_label")
-        self.charts_layout.addWidget(loading_lbl)
+        # Delay showing loading indicator to prevent flashing on fast loads
+        if hasattr(self, '_loading_timer'):
+            self._loading_timer.stop()
+        self._loading_timer = QTimer()
+        self._loading_timer.setSingleShot(True)
+        self._loading_timer.timeout.connect(lambda gen=current_gen: self._show_loading_if_needed(gen))
+        self._loading_timer.start(300)
 
         # Fire one background thread per level
         for level_name in levels:
@@ -217,6 +216,17 @@ class LJChartPage(BasePage):
             self._load_threads.append(thread)
             thread.start()
 
+    def _show_loading_if_needed(self, generation):
+        if generation == self._draw_generation and self._pending_levels > 0:
+            self._clear_chart()
+            self._hover_info = []
+            self._chart_widgets = []
+            loading_lbl = QLabel("⏳ 資料載入中，請稍候...")
+            loading_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            loading_lbl.setStyleSheet("font-size: 18px; color: #888; padding: 40px;")
+            loading_lbl.setObjectName("_loading_label")
+            self.charts_layout.addWidget(loading_lbl)
+
     def _on_level_data_ready(self, payload, level_name, iqi, generation):
         """Called on main thread when one level's data finishes loading."""
         if generation != self._draw_generation:
@@ -226,6 +236,8 @@ class LJChartPage(BasePage):
         self._level_results[level_name] = (payload.get("results", []), iqi)
         self._pending_levels -= 1
         if self._pending_levels <= 0:
+            if hasattr(self, '_loading_timer'):
+                self._loading_timer.stop()
             self._render_all_levels()
 
     def _render_all_levels(self):
@@ -247,6 +259,8 @@ class LJChartPage(BasePage):
                 if cw['scrollbar'].isVisible():
                     old_scrolls[i] = cw['scrollbar'].value()
 
+        # Clear old chart UI now that new data is ready
+        self._clear_chart()
         self._hover_info = []
         self._chart_widgets = []
 
@@ -282,7 +296,7 @@ class LJChartPage(BasePage):
             # Create independent UI for this level
             level_widget = QWidget()
             level_layout = QVBoxLayout(level_widget)
-            level_layout.setContentsMargins(0, 0, 0, 10)
+            level_layout.setContentsMargins(0, 0, 0, 0)
             
             fig = Figure(figsize=(10, 4.5), dpi=100)
             fig.patch.set_facecolor('#FDFBF0')
@@ -380,9 +394,8 @@ class LJChartPage(BasePage):
                 # 在左側 ax_stats 畫統計資料 (正式表格形式)
                 table = ax_stats.table(cellText=cell_text, loc='center', cellLoc='center', edges='open', bbox=[0, 0, 1, 1])
                 table.auto_set_font_size(False)
-                table.set_fontsize(7.5)
-                
-                # 第一列加上底色與粗體
+                table.set_fontsize(8.5)
+                table.scale(1, 2.2)               # 第一列加上底色與粗體
                 for (row, col), cell in table.get_celld().items():
                     cell.set_facecolor('none') # 讓儲存格背景透明以顯示 ax_stats 背景
                     # 移除內部 padding，避免字距太開被擠壓

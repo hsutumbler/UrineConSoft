@@ -30,8 +30,8 @@ ENV = "PROD"
 DB_CONFIG = {
     "host":               "127.0.0.1",  # 本地Macbook Air MySQL 的 IP
     "port":               3306,
-    "user":               "urine_admin",
-    "password":           "12345678",
+    "user":               "qc_user",
+    "password":           "qc_pass",
     "database":           "qc_system",
 
     "charset":            "utf8mb4",
