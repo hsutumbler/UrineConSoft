@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QSizePolicy, QStyledItemDelegate,
 )
 from PyQt6.QtCore import Qt, QDate
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtGui import QFont
 from config import DEFAULT_FONT
 
 

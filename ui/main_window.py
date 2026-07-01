@@ -3,10 +3,10 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QStackedWidget, QFrame,
-    QSpacerItem, QSizePolicy, QMessageBox,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont
+
 from config import APP_NAME, DEFAULT_FONT
 from services.auth_service import AuthService
 from services.sync_service import SyncService
