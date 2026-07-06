@@ -63,8 +63,14 @@ if os.path.exists(INI_PATH):
         MSSQL_CONFIG['user'] = config_parser.get('MSSQL', 'user', fallback=MSSQL_CONFIG['user'])
         MSSQL_CONFIG['password'] = config_parser.get('MSSQL', 'password', fallback=MSSQL_CONFIG['password'])
         MSSQL_CONFIG['database'] = config_parser.get('MSSQL', 'database', fallback=MSSQL_CONFIG['database'])
+    _APP_VERSION_FROM_INI = config_parser.get('App', 'version', fallback=None)
 else:
+    _APP_VERSION_FROM_INI = None
+if not os.path.exists(INI_PATH):
     # 建立預設 settings.ini 讓使用者未來可以直接修改
+    config_parser['App'] = {
+        'version': '1.0.1 (2026/07/02)',
+    }
     config_parser['MySQL'] = {
         'host': DB_CONFIG['host'],
         'port': str(DB_CONFIG['port']),
@@ -91,7 +97,7 @@ POOL_CONFIG = {
 }
 
 APP_NAME = "尿液品管系統"
-APP_VERSION = "1.0.0"
+APP_VERSION = _APP_VERSION_FROM_INI if _APP_VERSION_FROM_INI else "1.0.1 (2026/07/02)"
 
 IS_MAC = platform.system() == "Darwin"
 DEFAULT_FONT = "PingFang TC" if IS_MAC else "Microsoft JhengHei"
